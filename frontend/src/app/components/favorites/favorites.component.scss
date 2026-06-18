@@ -1,0 +1,103 @@
+.favorites-container {
+  min-height: 100vh;
+  min-width: 500px;
+  padding: 2rem;
+  background-color: #3aafa9;
+  text-align: center;
+
+  h2 {
+    margin-bottom: 1.5rem;
+  }
+
+  .category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+
+    .filter-button {
+      padding: 6px 14px;
+      border: 2px solid #def2f1;
+      background-color: #def2f1;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+
+      &:hover,
+      &.active {
+        background-color: #2b7a78;
+        border-color: #2b7a78;
+        color: white;
+      }
+    }
+  }
+
+  .loading {
+    font-family: 'Arial', sans-serif;
+    font-size: 16px;
+  }
+
+  .error-message {
+    color: #b04a2c;
+    font-family: 'Arial', sans-serif;
+  }
+
+  .favorites-list {
+    list-style: none;
+    padding: 0;
+    max-width: 600px;
+    margin: 0 auto;
+
+    .favorite-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+
+      .favorite-info {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+
+        .favorite-title {
+          font-size: 16px;
+          font-weight: bold;
+        }
+
+        .favorite-category {
+          font-size: 12px;
+          font-family: 'Arial', sans-serif;
+          opacity: 0.8;
+          text-transform: capitalize;
+        }
+      }
+
+      .remove-button {
+        padding: 4px 10px;
+        background: #b04a2c;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        flex-shrink: 0;
+
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+
+  .empty-favorites {
+    font-family: 'Arial', sans-serif;
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "suggestify-microservices",
+  "version": "1.0.0",
+  "description": "Microservices backend for Suggestify",
+  "author": "Maria Riazanova",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "build:all": "npm run build --workspaces",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/main",
+    "docker:start": "cd infrastructure && docker-compose up -d --build",
+    "docker:stop": "node scripts/stop-and-reset.js",
+    "docker:logs": "cd infrastructure && docker-compose logs -f",
+    "docker:health": "bash scripts/health-check.sh",
+    "test:all": "npm run test --workspaces",
+    "test:coverage": "npm run test:cov --coverage",
+    "test:e2e": "npm run test:e2e --workspaces",
+    "lint:all": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces"
+  },
+  "workspaces": [
+    "services/*"
+  ],
+  "keywords": [],
+  "dependencies": {},
+  "devDependencies": {}
+}

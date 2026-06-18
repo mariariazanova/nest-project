@@ -1,0 +1,47 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { AppModule } from './app.module';
+import { ConsulService } from './infrastructure/consul/consul.service';
+
+async function bootstrap() {
+  const logger = new Logger('HistoryService');
+  const PORT = process.env.PORT || 3003;
+
+  const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  app.enableCors({
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true,
+  });
+
+  // RabbitMQ Microservice consumer
+  const rabbitMQUrl = process.env.RABBITMQ_URL;
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitMQUrl],
+      queue: 'history_queue',
+      queueOptions: { durable: true },
+    },
+  });
+
+  await app.startAllMicroservices();
+  await app.listen(PORT);
+
+  const consulService = app.get(ConsulService);
+  await consulService.registerService();
+
+  logger.log(`History Service running on port ${PORT}`);
+  logger.log(`RabbitMQ microservice started, listening to history_queue`);
+}
+
+bootstrap();

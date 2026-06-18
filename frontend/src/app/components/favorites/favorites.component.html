@@ -1,0 +1,32 @@
+<div class="favorites-container">
+  <h2>Twoje ulubione</h2>
+
+  <div class="category-filter">
+    <button
+      *ngFor="let cat of categories"
+      class="filter-button"
+      [class.active]="selectedCategory === cat.value"
+      (click)="onCategoryChange(cat.value)"
+    >
+      {{ cat.label }}
+    </button>
+  </div>
+
+  <p *ngIf="isLoading()" class="loading">Ładowanie...</p>
+
+  <p *ngIf="errorMessage()" class="error-message">{{ errorMessage() }}</p>
+
+  <ul *ngIf="!isLoading() && favorites().length > 0; else noFavorites" class="favorites-list">
+    <li *ngFor="let favorite of favorites()" class="favorite-item">
+      <div class="favorite-info">
+        <span class="favorite-title">{{ favorite.title || favorite.itemId }}</span>
+        <span class="favorite-category">{{ favorite.category }}</span>
+      </div>
+      <button class="remove-button" (click)="removeFavorite(favorite.id)">✕</button>
+    </li>
+  </ul>
+</div>
+
+<ng-template #noFavorites>
+  <p *ngIf="!isLoading()" class="empty-favorites">Nie masz ulubionych.</p>
+</ng-template>

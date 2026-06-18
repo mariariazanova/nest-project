@@ -1,0 +1,43 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: 'Fenomen Sans';
+  src: url('/assets/fonts/FenomenSans-Black.ttf') format('truetype');
+  font-weight: 900;
+}
+
+body {
+  font-family: 'Fenomen Sans', sans-serif;
+}
+
+button {
+  padding: 10px 18px;
+  font-size: 1rem;
+  border: 2px solid #f5f5f5;
+  border-radius: 5px;
+  background-color: #f5f5f5;
+  color: #17252a;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+
+  &.button-primary {
+    border: 2px solid #7baf3a;
+    background-color: #7baf3a;
+    color: white;
+  }
+
+  &.button-secondary {
+    border: 2px solid #f5f5f5;
+    background-color: #f5f5f5;
+    color: #17252a;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}

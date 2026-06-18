@@ -1,0 +1,51 @@
+<header class="header">
+  <div class="header-container">
+    <nav class="nav">
+      <a routerLink="/" class="nav-link">Polecajka</a>
+
+      <a
+        *ngIf="isLoggedIn()"
+        [routerLink]="['/recommendations-history']"
+        class="nav-link"
+      >
+        Historia rekomendacji
+      </a>
+
+      <a
+        *ngIf="isLoggedIn()"
+        [routerLink]="['/favorites']"
+        class="nav-link"
+      >
+        Ulubione
+      </a>
+    </nav>
+
+    <button
+      *ngIf="!isLoggedIn()"
+      class="login-button"
+      (click)="openLoginModal()"
+    >
+      Zaloguj się
+    </button>
+
+    <div *ngIf="isLoggedIn()" class="user-profile">
+      <div class="profile-circle">
+        <span>{{ userName() }}</span>
+      </div>
+
+      <button class="login-button" (click)="onLogout()">Wyloguj się</button>
+    </div>
+  </div>
+</header>
+
+<app-login
+  *ngIf="isLoginModalOpen"
+  (login)="onLogin($event)"
+  (cancel)="closeLoginModal()"
+></app-login>
+
+<div
+  *ngIf="isLoginModalOpen"
+  class="login-modal-overlay"
+  (click)="closeLoginModal()"
+></div>
