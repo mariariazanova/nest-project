@@ -1,0 +1,94 @@
+import {
+  Controller,
+  Headers,
+  Get,
+  Param,
+  Logger,
+  Inject,
+  NotFoundException,
+  Query,
+} from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { SuggestionService } from './suggestion.service';
+import { FilterItemsDto } from './dto/filter-items.dto';
+
+@Controller('suggestion')
+export class SuggestionController {
+  private readonly logger = new Logger(SuggestionController.name);
+
+  constructor(
+    private readonly suggestionService: SuggestionService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
+
+  @Get()
+  async findFiltered(
+    @Query('category') category: string,
+    @Query('mood') mood: string,
+    @Query('genre') genre: string,
+    @Query('event') event: string,
+    @Headers('X-User-Id') userId: string,
+  ) {
+    this.logger.log(`[Request] GET /suggestion - userId: ${userId}`);
+
+    const dto: FilterItemsDto = {
+      criteria: { category, mood, genre, event },
+    };
+
+    this.logger.debug(`Request criteria: ${JSON.stringify(dto.criteria)}`);
+
+    // Cache key stays the same logic
+    const cacheKey = this.generateCacheKey(dto);
+    const cached = await this.cacheManager.get(cacheKey);
+    this.logger.debug(`Cached: ${cacheKey} ${cached}`);
+
+    if (cached) {
+      this.logger.debug(`Cache HIT: ${cacheKey}`);
+      return cached;
+    }
+
+    this.logger.debug(`Cache MISS: ${cacheKey}`);
+    const result = await this.suggestionService.findManyByProperty(dto, userId);
+
+    await this.cacheManager.set(cacheKey, result, 1800000); // 30 min
+    this.logger.log(`[Response] Returning ${result.items?.length} suggestions`);
+
+    return result;
+  }
+
+  @Get(':category/:id')
+  async findOne(@Param('category') category: string, @Param('id') id: string) {
+    this.logger.log(`[Request] GET /suggestion/${category}/${id}`);
+
+    const cacheKey = `suggestion:${category}:${id}`;
+    const cached = await this.cacheManager.get(cacheKey);
+
+    if (cached) {
+      this.logger.debug(`Cache HIT: ${cacheKey}`);
+      return cached;
+    }
+
+    this.logger.log(`[Cache MISS] ${cacheKey} - fetching from service`);
+
+    const result = await this.suggestionService.findOne(category, id);
+
+    if (!result) {
+      this.logger.warn(`[Not Found] ${category}/${id} - no suggestion found`);
+      throw new NotFoundException(`Suggestion not found: ${category}/${id}`);
+    }
+
+    await this.cacheManager.set(cacheKey, result, 3600000); // 1 hour
+    this.logger.log(`[Response] ${category}/${id} returned`);
+
+    return result;
+  }
+
+  private generateCacheKey(dto: FilterItemsDto): string {
+    const { category, mood, genre, event } = dto.criteria;
+
+    return ['suggestions', category || 'all', mood || 'any', genre || 'any', event || 'any'].join(
+      ':',
+    );
+  }
+}

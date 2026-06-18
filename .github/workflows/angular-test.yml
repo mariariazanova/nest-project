@@ -1,0 +1,68 @@
+name: Frontend + Backend Tests
+
+on:
+  push:
+    branches: [ '**' ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+  pull_request:
+    branches: [ '**' ]
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+
+jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run frontend unit tests with coverage
+        run: npx ng test --browsers=ChromeHeadless --code-coverage --watch=false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: coverage/
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Remove duplicate RxJS installations
+        run: node scripts/remove-duplicate-rxjs.js
+
+      - name: Run backend unit tests
+        run: npm run test:all
+
+      - name: Run backend e2e tests
+        run: npm run test:e2e

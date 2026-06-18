@@ -1,0 +1,55 @@
+.login-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+
+  h2 {
+    margin-bottom: 1rem;
+  }
+
+  form {
+    margin-bottom: 1rem;
+
+    .register-container {
+      display: flex;
+      align-items: center;
+
+      input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+      }
+
+      .register-label {
+        font-family: 'Arial', sans-serif;
+        margin-left: 1rem;
+      }
+    }
+
+    input:not([type="checkbox"]) {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 15px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .error-message {
+      font-family: 'Arial', sans-serif;
+      font-size: 10px;
+      margin-top: -10px;
+      color: red;
+    }
+  }
+
+  .login-button {
+    margin-right: 1rem;
+  }
+}

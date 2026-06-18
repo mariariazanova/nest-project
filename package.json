@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "start": "docker compose up -d --build",
+    "stop": "docker compose down && node backend/scripts/stop-and-reset.js",
+    "reset": "docker compose down -v",
+    "logs": "docker compose logs -f"
+  }
+}

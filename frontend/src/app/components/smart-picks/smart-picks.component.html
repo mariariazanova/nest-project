@@ -1,0 +1,40 @@
+<div class="smart-picks-container">
+    <h2 class="step-title">{{ slides[currentStep].title }}</h2>
+
+    <div class="tags">
+      <button
+        *ngFor="let tag of slides[currentStep].tags"
+        class="choice-button"
+        [class.selected]="isSelected(tag.value, slides[currentStep].value)"
+        (click)="onTagClick(tag.value, slides[currentStep].value)"
+      >
+        {{ tag.label }}
+      </button>
+    </div>
+
+    <div class="controls">
+      <button
+        [disabled]="currentStep === 0"
+        class="button-secondary navigation-button"
+        (click)="returnPreviousStep()"
+      >
+        Wstecz
+      </button>
+
+      <button
+        [disabled]="!isMoodAndCategoryTagSelected"
+        [ngClass]="currentStep === slides.length - 1 ? 'suggestion-button' : 'button-secondary navigation-button'"
+        (click)="goNextStep()"
+      >
+        {{ currentStep === slides.length - 1 ? 'Pokaż polecenia' : 'Dalej' }}
+      </button>
+
+      <button
+        class="button-primary clear-button"
+        [disabled]="!userChoice"
+        (click)="onClearClick()"
+      >
+        Wyczyść
+      </button>
+    </div>
+</div>

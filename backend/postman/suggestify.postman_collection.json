@@ -1,0 +1,689 @@
+{
+	"info": {
+		"_postman_id": "75889582-d5e7-4ecb-9560-e63d34f4f8e0",
+		"name": "Suggestify Microservices (RESTful v3 - HATEOAS)",
+		"description": "Complete API collection - RESTful with HATEOAS links, { data, links } envelope",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Signup (POST /v1/auth/users)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"const authData = jsonData.data || jsonData;",
+									"if (authData.accessToken) {",
+									"    pm.environment.set('accessToken', authData.accessToken);",
+									"    pm.collectionVariables.set('accessToken', authData.accessToken);",
+									"}",
+									"if (authData.user && authData.user.id) {",
+									"    pm.environment.set('userId', authData.user.id);",
+									"    pm.collectionVariables.set('userId', authData.user.id);",
+									"}",
+									"// store HATEOAS links",
+									"if (jsonData.links) {",
+									"    pm.environment.set('links', JSON.stringify(jsonData.links));",
+									"    if (jsonData.links.sessions) pm.environment.set('sessionsUrl', jsonData.links.sessions);",
+									"    if (jsonData.links.favorites) pm.environment.set('favoritesUrl', jsonData.links.favorites);",
+									"    if (jsonData.links.history) pm.environment.set('historyUrl', jsonData.links.history);",
+									"    if (jsonData.links.suggestions) pm.environment.set('suggestionsUrl', jsonData.links.suggestions);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"user\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "auth", "users"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login (POST /v1/auth/sessions)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();",
+									"const authData = jsonData.data || jsonData;",
+									"if (authData.accessToken) {",
+									"    pm.environment.set('accessToken', authData.accessToken);",
+									"    pm.collectionVariables.set('accessToken', authData.accessToken);",
+									"}",
+									"if (authData.user && authData.user.id) {",
+									"    pm.environment.set('userId', authData.user.id);",
+									"    pm.collectionVariables.set('userId', authData.user.id);",
+									"}",
+									"// store HATEOAS links",
+									"if (jsonData.links) {",
+									"    pm.environment.set('links', JSON.stringify(jsonData.links));",
+									"    if (jsonData.links.sessions) pm.environment.set('sessionsUrl', jsonData.links.sessions);",
+									"    if (jsonData.links.favorites) pm.environment.set('favoritesUrl', jsonData.links.favorites);",
+									"    if (jsonData.links.history) pm.environment.set('historyUrl', jsonData.links.history);",
+									"    if (jsonData.links.suggestions) pm.environment.set('suggestionsUrl', jsonData.links.suggestions);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"user\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/sessions",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "auth", "sessions"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile (GET /v1/auth/users/me)",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/users/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "auth", "users", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout (DELETE /v1/auth/sessions)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 204) {",
+									"    pm.environment.unset('accessToken');",
+									"    pm.collectionVariables.unset('accessToken');",
+									"    pm.environment.unset('userId');",
+									"    pm.collectionVariables.unset('userId');",
+									"    pm.environment.unset('links');",
+									"    pm.environment.unset('sessionsUrl');",
+									"    pm.environment.unset('favoritesUrl');",
+									"    pm.environment.unset('historyUrl');",
+									"    pm.environment.unset('suggestionsUrl');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [{"key": "Authorization", "value": "Bearer {{accessToken}}"}],
+						"url": {
+							"raw": "{{baseUrl}}/v1/auth/sessions",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "auth", "sessions"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Suggestions",
+			"item": [
+				{
+					"name": "Get Film Suggestions (GET /v1/suggestion)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    const suggestion = jsonData.data || jsonData;",
+									"    if (suggestion.type) pm.environment.set('category', suggestion.type);",
+									"    if (suggestion.items && suggestion.items.length > 0) {",
+									"        pm.environment.set('itemId', suggestion.items[0].id);",
+									"    } else {",
+									"        pm.environment.unset('itemId');",
+									"    }",
+									"    // store HATEOAS links",
+									"    if (jsonData.links) {",
+									"        if (jsonData.links.favorites) pm.environment.set('favoritesUrl', jsonData.links.favorites);",
+									"        if (jsonData.links.history) pm.environment.set('historyUrl', jsonData.links.history);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/suggestion?category=films&mood=relaxing&genre=sci-fi&event=discovery",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "suggestion"],
+							"query": [
+								{"key": "category", "value": "films"},
+								{"key": "mood", "value": "relaxing"},
+								{"key": "genre", "value": "sci-fi"},
+								{"key": "event", "value": "discovery"}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Book Suggestions (GET /v1/suggestion)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    const suggestion = jsonData.data || jsonData;",
+									"    if (suggestion.type) pm.environment.set('category', suggestion.type);",
+									"    if (suggestion.items && suggestion.items.length > 0) {",
+									"        pm.environment.set('itemId', suggestion.items[0].id);",
+									"    } else {",
+									"        pm.environment.unset('itemId');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/suggestion?category=books&mood=happy",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "suggestion"],
+							"query": [
+								{"key": "category", "value": "books"},
+								{"key": "mood", "value": "happy"},
+								{"key": "genre", "value": "", "disabled": true},
+								{"key": "event", "value": "", "disabled": true}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Song Suggestions (GET /v1/suggestion)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    const suggestion = jsonData.data || jsonData;",
+									"    if (suggestion.type) pm.environment.set('category', suggestion.type);",
+									"    if (suggestion.items && suggestion.items.length > 0) {",
+									"        pm.environment.set('itemId', suggestion.items[0].id);",
+									"    } else {",
+									"        pm.environment.unset('itemId');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/suggestion?category=songs&mood=happy",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "suggestion"],
+							"query": [
+								{"key": "category", "value": "songs"},
+								{"key": "mood", "value": "happy"},
+								{"key": "genre", "value": "", "disabled": true},
+								{"key": "event", "value": "", "disabled": true}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Game Suggestions (GET /v1/suggestion)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    const suggestion = jsonData.data || jsonData;",
+									"    if (suggestion.type) pm.environment.set('category', suggestion.type);",
+									"    if (suggestion.items && suggestion.items.length > 0) {",
+									"        pm.environment.set('itemId', suggestion.items[0].id);",
+									"    } else {",
+									"        pm.environment.unset('itemId');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/suggestion?category=games&mood=dark&event=magic",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "suggestion"],
+							"query": [
+								{"key": "category", "value": "games"},
+								{"key": "mood", "value": "dark"},
+								{"key": "genre", "value": "", "disabled": true},
+								{"key": "event", "value": "magic"}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get One Item (GET /v1/suggestion/:category/:id)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const category = pm.environment.get('category');",
+									"const itemId = pm.environment.get('itemId');",
+									"if (!category || !itemId) {",
+									"    throw new Error('Missing category or itemId - run Get Suggestions first!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/suggestion/{{category}}/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "suggestion", "{{category}}", "{{itemId}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "History",
+			"item": [
+				{
+					"name": "Get User History (GET /v1/history)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    const historyData = jsonData.data || jsonData;",
+									"    const items = Array.isArray(historyData) ? historyData : (historyData.items || historyData);",
+									"    if (Array.isArray(items) && items.length > 0) {",
+									"        pm.environment.set('historyItemId', items[0]._id);",
+									"    } else {",
+									"        pm.environment.unset('historyItemId');",
+									"    }",
+									"    // store HATEOAS links",
+									"    if (jsonData.links) {",
+									"        if (jsonData.links.favorites) pm.environment.set('favoritesUrl', jsonData.links.favorites);",
+									"        if (jsonData.links.suggestions) pm.environment.set('suggestionsUrl', jsonData.links.suggestions);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/history",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "history"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get History Item (GET /v1/history/:id)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const historyItemId = pm.environment.get('historyItemId');",
+									"if (!historyItemId) {",
+									"    throw new Error('Missing historyItemId - run Get User History first!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/history/{{historyItemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "history", "{{historyItemId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Stats (GET /v1/history/stats)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/history/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "history", "stats"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Favorites",
+			"item": [
+				{
+					"name": "Add Favorite (POST /v1/favorite)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const itemId = pm.environment.get('itemId');",
+									"const category = pm.environment.get('category');",
+									"if (!itemId || !category) {",
+									"    throw new Error('Missing itemId or category - run Get Suggestions first!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const jsonData = pm.response.json();",
+									"    const favorite = jsonData.data || jsonData;",
+									"    if (favorite.id) {",
+									"        pm.environment.set('favoriteId', favorite.id);",
+									"        pm.collectionVariables.set('favoriteId', favorite.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": \"{{itemId}}\",\n  \"category\": \"{{category}}\",\n  \"title\": \"My favorite item\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/favorite",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "favorite"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Favorites (GET /v1/favorite)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/favorite",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "favorite"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Favorites by Category (GET /v1/favorite?category=)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/favorite?category={{category}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "favorite"],
+							"query": [
+								{"key": "category", "value": "{{category}}"}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Favorite by ID (GET /v1/favorite/:id)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const favoriteId = pm.environment.get('favoriteId');",
+									"if (!favoriteId) {",
+									"    throw new Error('Missing favoriteId - run Add Favorite first!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/favorite/{{favoriteId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "favorite", "{{favoriteId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check Is Favorite (GET /v1/favorite/check/:category/:itemId)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const itemId = pm.environment.get('itemId');",
+									"const category = pm.environment.get('category');",
+									"if (!itemId || !category) {",
+									"    throw new Error('Missing itemId or category - run Get Suggestions first!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/favorite/check/{{category}}/{{itemId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "favorite", "check", "{{category}}", "{{itemId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Favorite (DELETE /v1/favorite/:id)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const favoriteId = pm.environment.get('favoriteId');",
+									"if (!favoriteId) {",
+									"    throw new Error('Missing favoriteId - run Add Favorite first!');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 204) {",
+									"    pm.environment.unset('favoriteId');",
+									"    pm.collectionVariables.unset('favoriteId');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{accessToken}}"},
+							{"key": "X-User-Id", "value": "{{userId}}"}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/favorite/{{favoriteId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "favorite", "{{favoriteId}}"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health & Metrics",
+			"item": [
+				{
+					"name": "API Gateway Health",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/metrics",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "metrics"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{"key": "baseUrl", "value": "http://localhost:3000", "type": "string"},
+		{"key": "accessToken", "value": "", "type": "string"},
+		{"key": "userId", "value": "", "type": "string"},
+		{"key": "favoriteId", "value": "", "type": "string"},
+		{"key": "sessionsUrl", "value": "", "type": "string"},
+		{"key": "favoritesUrl", "value": "", "type": "string"},
+		{"key": "historyUrl", "value": "", "type": "string"},
+		{"key": "suggestionsUrl", "value": "", "type": "string"}
+	]
+}
