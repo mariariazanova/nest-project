@@ -500,10 +500,10 @@ Docker Compose automatically:
 
 ### Option 1: Full Stack (Backend + Frontend) - Recommended
 
-**From project root**, start everything with one command:
+**From project root**, start everything with npm script:
 
 ```bash
-docker-compose up -d --build
+npm run start
 ```
 
 This command will:
@@ -519,9 +519,9 @@ This command will:
 - API Gateway: http://localhost:3000
 - Monitoring: http://localhost:3050 (Grafana)
 
-**Stop everything:**
+**Stop everything using npm script:**
 ```bash
-docker-compose down
+npm run stop
 ```
 
 ### Option 2: Backend Only (No Frontend)
