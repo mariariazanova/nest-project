@@ -107,6 +107,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: rabbit
       RABBITMQ_DEFAULT_PASS: rabbitpass
+      RABBITMQ_ERLANG_COOKIE: secretcookie
     ports:
       - "5672:5672"   # AMQP
       - "15672:15672" # Management UI
@@ -143,8 +144,11 @@ services:
   # Auth Service
   auth-service:
     build:
-      context: ../services/auth-service
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: backend/infrastructure/Dockerfile.nx-services
+      args:
+        SERVICE_NAME: auth-service
+        SERVICE_PORT: 3001
     container_name: auth-service
     environment:
       - NODE_ENV=development
@@ -188,8 +192,11 @@ services:
   # Suggestion Service
   suggestion-service:
     build:
-      context: ../services/suggestion-service
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: backend/infrastructure/Dockerfile.nx-services
+      args:
+        SERVICE_NAME: suggestion-service
+        SERVICE_PORT: 3002
     container_name: suggestion-service
     environment:
       - NODE_ENV=development
@@ -231,8 +238,11 @@ services:
   # History Service
   history-service:
     build:
-      context: ../services/history-service
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: backend/infrastructure/Dockerfile.nx-services
+      args:
+        SERVICE_NAME: history-service
+        SERVICE_PORT: 3003
     container_name: history-service
     environment:
       - NODE_ENV=development
@@ -271,8 +281,11 @@ services:
   # Favorite Service
   favorite-service:
     build:
-      context: ../services/favorite-service
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: backend/infrastructure/Dockerfile.nx-services
+      args:
+        SERVICE_NAME: favorite-service
+        SERVICE_PORT: 3004
     container_name: favorite-service
     environment:
       - NODE_ENV=development
@@ -308,11 +321,29 @@ services:
       retries: 3
       start_period: 40s
 
+  # Frontend
+  frontend:
+    build:
+      context: ../..
+      dockerfile: backend/infrastructure/Dockerfile.frontend
+    container_name: frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
   # API Gateway
   api-gateway:
     build:
-      context: ../services/api-gateway
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: backend/infrastructure/Dockerfile.nx-services
+      args:
+        SERVICE_NAME: api-gateway
+        SERVICE_PORT: 3000
     container_name: api-gateway
     environment:
       - NODE_ENV=development
@@ -352,7 +383,7 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3

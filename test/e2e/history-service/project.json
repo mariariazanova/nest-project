@@ -1,0 +1,24 @@
+{
+  "name": "history-service-e2e",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "implicitDependencies": [
+    "history-service"
+  ],
+  "projectType": "application",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{e2eProjectRoot}"
+      ],
+      "options": {
+        "jestConfig": "test/e2e/history-service/jest.config.cts",
+        "passWithNoTests": true
+      },
+      "dependsOn": [
+        "history-service:build",
+        "history-service:serve"
+      ]
+    }
+  }
+}

@@ -2,67 +2,51 @@ name: Frontend + Backend Tests
 
 on:
   push:
-    branches: [ '**' ]
-    paths:
-      - 'frontend/**'
-      - 'backend/**'
+    branches: ['**']
   pull_request:
-    branches: [ '**' ]
-    paths:
-      - 'frontend/**'
-      - 'backend/**'
+    branches: ['**']
 
 jobs:
-  frontend-tests:
+  test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for Nx affected commands
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: 'npm'
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Run frontend unit tests with coverage
-        run: npx ng test --browsers=ChromeHeadless --code-coverage --watch=false
+      - name: Derive appropriate SHAs for Nx affected commands
+        uses: nrwl/nx-set-shas@v4
 
-      - name: Upload coverage report
+      - name: Cache Nx
+        uses: actions/cache@v3
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-
+
+      - name: Run affected linting
+        run: npx nx affected --target=lint --parallel=3
+
+      - name: Run affected tests
+        run: npx nx affected --target=test --parallel=3
+
+      - name: Upload frontend coverage
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-coverage-report
-          path: coverage/
+          name: frontend-coverage
+          path: coverage/apps/frontend
 
-  backend-tests:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: Install backend dependencies
-        run: npm ci
-
-      - name: Remove duplicate RxJS installations
-        run: node scripts/remove-duplicate-rxjs.js
-
-      - name: Run backend unit tests
-        run: npm run test:all
-
-      - name: Run backend e2e tests
-        run: npm run test:e2e
+      - name: Build affected apps
+        run: npx nx affected --target=build --parallel=3

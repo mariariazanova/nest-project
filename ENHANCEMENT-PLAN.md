@@ -1,19 +1,19 @@
 # Suggestify Enhancement Plan - Overall Timeline
 
 ## Project Overview
-Enhance the Suggestify microservices platform with file uploads, real-time features, security improvements, testing infrastructure, and deployment automation.
+Enhance Suggestify with file uploads, real-time features, security improvements, testing infrastructure, and deployment automation.
 
 ---
 
 ## Phase 0: Technical Debt & Architecture Cleanup (1 week)
 
-### 0.1. Monorepo Tooling - Nx Setup (2-3 days)
+### 0.1. Monorepo Tooling - Nx Setup (2 days)
 - Install and configure Nx for entire monorepo (frontend + backend)
 - Setup shared libraries structure (libs/shared, libs/backend)
 - Configure build caching and affected commands
 - Migrate apps to Nx workspace
 
-**Estimate:** 2-3 days (1 developer)
+**Estimate:** 2 days (1 developer)
 
 ---
 

@@ -352,6 +352,202 @@ suggestify-microservices/
 └── README.md                                    # This file
 ```
 
+**Note**: The project structure above shows the legacy folder layout. The project has been migrated to Nx monorepo workspace (see below).
+
+## Nx Monorepo Workspace
+
+The project uses **Nx** as a monorepo build system for improved performance and developer experience.
+
+### Workspace Structure
+
+```
+nest-project/
+├── apps/                              # All applications
+│   ├── api-gateway/                   # API Gateway (NestJS)
+│   ├── auth-service/                  # Auth Service (NestJS)
+│   ├── suggestion-service/            # Suggestion Service (NestJS)
+│   ├── history-service/               # History Service (NestJS)
+│   ├── favorite-service/              # Favorite Service (NestJS)
+│   └── frontend/                      # Angular 18 frontend
+│
+├── libs/                              # Shared libraries (future use)
+│
+├── backend/
+│   ├── infrastructure/                # Docker, docker-compose, monitoring
+│   └── scripts/                       # Utility scripts
+│
+├── nx.json                            # Nx workspace configuration
+├── tsconfig.base.json                 # Root TypeScript config
+└── package.json                       # Root dependencies and scripts
+```
+
+### Nx Features
+
+**Build Caching**:
+- Nx caches task outputs locally in `.nx/cache`
+- Subsequent runs of the same task retrieve results from cache
+- 50-80% faster incremental builds
+
+**Affected Commands**:
+- Only build/test projects affected by changes
+- Speeds up CI/CD pipelines significantly
+- Example: changing auth-service won't rebuild frontend
+
+**Dependency Graph**:
+- Visualize project dependencies
+- Understand how changes propagate
+- Run `npx nx graph` to view interactive graph
+
+### Nx Commands
+
+All Nx commands can be run from the project root:
+
+#### Building Applications
+
+```bash
+# Build all applications
+npm run build:all
+# or: npx nx run-many --target=build --all
+
+# Build specific application
+npx nx build api-gateway
+npx nx build frontend
+
+# Build only affected applications (based on git changes)
+npm run affected:build
+# or: npx nx affected --target=build
+
+# Build with production optimizations
+npx nx build frontend --configuration=production
+```
+
+#### Running Applications
+
+```bash
+# Serve an application (development mode)
+npx nx serve api-gateway
+npx nx serve frontend
+
+# Serve with watch mode (auto-reload)
+npx nx serve auth-service --watch
+```
+
+#### Testing
+
+```bash
+# Run all tests
+npm run test:all
+# or: npx nx run-many --target=test --all
+
+# Test specific application
+npx nx test auth-service
+npx nx test frontend
+
+# Run only affected tests
+npm run affected:test
+# or: npx nx affected --target=test
+
+# Test with coverage
+npx nx test auth-service --coverage
+```
+
+#### Linting
+
+```bash
+# Lint all applications
+npm run lint:all
+# or: npx nx run-many --target=lint --all
+
+# Lint specific application
+npx nx lint api-gateway
+
+# Lint only affected applications
+npm run affected:lint
+# or: npx nx affected --target=lint
+```
+
+#### Nx Utilities
+
+```bash
+# View dependency graph (interactive)
+npx nx graph
+
+# View dependency graph for specific project
+npx nx graph --focus=api-gateway
+
+# List all projects
+npx nx show projects
+
+# Show project details
+npx nx show project api-gateway
+
+# Clear Nx cache
+npx nx reset
+
+# View affected projects
+npx nx affected:graph
+npx nx print-affected --target=build
+```
+
+### Nx Workspace Benefits
+
+1. **Faster Builds**: Local caching eliminates redundant work
+2. **Efficient CI**: Affected commands only build/test what changed
+3. **Code Sharing**: Easy to extract and share code between apps (future Phase 0.4)
+4. **Better DX**: Single command to build/test everything
+5. **Enforced Standards**: Consistent tooling across all applications
+
+### Nx Migration Status
+
+The project has completed **Phase 0.1: Nx Setup**:
+
+- ✅ Nx workspace initialized with local caching
+- ✅ All 5 NestJS services migrated to apps/
+- ✅ Angular frontend migrated to apps/
+- ✅ Build system configured (webpack for NestJS, Angular CLI for frontend)
+- ✅ CI/CD updated to use Nx affected commands
+- ✅ Docker configuration updated for Nx workspace
+
+**Future Phases** (see ENHANCEMENT-PLAN.md):
+- Phase 0.2: Move infrastructure to root
+- Phase 0.3: Remove RxJS duplication workaround
+- Phase 0.4: Extract shared libraries (metrics, consul, circuit-breaker, health)
+- Phase 0.5: Add pre-commit hooks with Husky
+
+### Working with the Monorepo
+
+**Install Dependencies** (from project root):
+```bash
+npm install
+```
+
+**Run Docker Compose** (paths updated for Nx):
+```bash
+# Start all services (from project root)
+npm run start
+
+# Stop all services
+npm run stop
+```
+
+**Develop Locally**:
+```bash
+# Terminal 1: Start backend services
+npx nx serve api-gateway
+
+# Terminal 2: Start frontend
+npx nx serve frontend
+
+# Terminal 3: Run tests in watch mode
+npx nx test auth-service --watch
+```
+
+**Performance Tips**:
+- Use `npx nx affected --target=build` in CI to build only changed projects
+- Nx cache persists between runs - second build is nearly instant
+- Use `--parallel=N` to build multiple projects simultaneously
+- Example: `npx nx run-many --target=build --all --parallel=5`
+
 ## Service Communication
 
 The microservices communicate using multiple patterns for optimal performance and reliability:
