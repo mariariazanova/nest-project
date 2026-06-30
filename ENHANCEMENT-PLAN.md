@@ -1,4 +1,4 @@
-# Suggestify Enhancement Plan - Overall Timeline
+﻿# Suggestify Enhancement Plan - Overall Timeline
 
 ## Project Overview
 Enhance Suggestify with file uploads, real-time features, security improvements, testing infrastructure, and deployment automation.
@@ -40,24 +40,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.3. Rewrite Backend E2E Tests (0.5 days)
-**Current state:** All 5 backend e2e spec files (`test/e2e/*/src/**/*.spec.ts`) contain identical Nx-generated placeholder tests (`GET /api → { message: 'Hello API' }`). They don't test actual service endpoints and can't pass without real infrastructure running.
-
-**What to do:**
-- Replace placeholder specs with real integration tests for each service's actual endpoints:
-  - **auth-service-e2e** — register, login, logout, token refresh flows
-  - **suggestion-service-e2e** — get suggestions by mood/category/genre
-  - **favorite-service-e2e** — add, list, filter, remove favorites
-  - **history-service-e2e** — create and retrieve suggestion history entries
-  - **api-gateway-e2e** — proxy routing, auth middleware, health check
-- Decide on test environment strategy: Docker Compose test profile or in-memory stubs
-- Update `dependsOn` in each e2e `project.json` once serve dependencies are stable
-
-**Estimate:** 0.5 day (1 developer)
-
----
-
-### 0.4. Restructure Infrastructure Folder (0.5 day)
+### 0.3. Restructure Infrastructure Folder (0.5 day)
 - Move `backend/infrastructure/` to root `infrastructure/`
 - Update docker-compose paths and CI/CD references
 - Infrastructure orchestrates entire system, not just backend
@@ -66,7 +49,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.5. Fix RxJS Duplication Hack (0.5 day)
+### 0.4. Fix RxJS Duplication Hack (0.5 day)
 - Remove `backend/scripts/remove-duplicate-rxjs.js` hack script
 - Move RxJS to root backend/package.json with overrides
 - Let Nx/npm handle dependency deduplication properly
@@ -75,7 +58,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.6. Extract Infrastructure Modules to Shared Libraries (2-3 days)
+### 0.5. Extract Infrastructure Modules to Shared Libraries (2-3 days)
 **Current Issue:** ~1,250 lines of duplicated infrastructure code across all 5 services
 
 **Extract to Shared Libraries:**
@@ -93,7 +76,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.7. Pre-commit Hooks (0.5 day)
+### 0.6. Pre-commit Hooks (0.5 day)
 - Install Husky + lint-staged
 - Run ESLint + Prettier on git commit
 - Run tests before push
@@ -305,13 +288,27 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ## Phase 4: Testing Infrastructure (2 weeks)
 
-### 16. Playwright E2E Testing (3-4 days)
-- Install Playwright, configure for frontend
-- Write E2E tests for critical flows: login, search, favorites
-- Configure CI/CD pipeline to run Playwright tests
-- Setup visual regression testing
+### 16. Playwright E2E Testing — Frontend + Backend (4-6 days)
+Playwright covers two layers:
 
-**Estimate:** 3-4 days (1 developer)
+**Frontend E2E (browser automation):**
+- Open browser → visit login page → fill form → click Login → assert dashboard appears
+- Search flow: type query → results appear → click item → detail page loads
+- Favorites flow: add favorite → appears in list → remove → gone from list
+- Visual regression testing (screenshot diffs)
+
+**Backend API E2E (full stack, no browser):**
+- All services running via docker-compose (or a test compose profile)
+- Playwright’s `request` context sends HTTP calls through the full stack: Client → Gateway → Service → DB
+- Tests the complete chain: auth middleware, proxy routing, inter-service communication via RabbitMQ
+- Covers api-gateway scenarios excluded from Phase 0.3 integration tests
+
+**Setup:**
+- Playwright already scaffolded at `test/e2e/frontend/` with `playwright.config.mts`
+- Add `test/e2e/backend-api/` for Playwright API tests
+- Configure CI/CD to run both suites
+
+**Estimate:** 4-6 days (1 developer)
 
 ---
 
@@ -322,6 +319,30 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 - Integrate with Playwright tests
 
 **Estimate:** 3-5 days (1 developer)
+
+---
+
+### 17. Backend Integration Tests (1-2 days)
+Test each NestJS service in isolation with real infrastructure — verify both HTTP response and database side effects, with no external docker-compose required.
+
+**Approach:** Jest + Supertest + Testcontainers
+- Testcontainers starts real Docker containers (Postgres / MongoDB / Redis / RabbitMQ) per test run
+- NestJS Testing Module boots the service in-process connected to those containers
+- Supertest sends HTTP requests to the in-process server
+- Tests assert HTTP response **and** actual DB state (row exists, Redis key written, etc.)
+
+**Per service:**
+- **auth-service** — register → assert Postgres row; login → JWT; logout → assert Redis blacklist
+- **suggestion-service** — list with seeded data; filter by category; assert Redis cache hit
+- **favorite-service** — full CRUD with Postgres row assertions after each mutation
+- **history-service** — publish `suggestion_created` to RabbitMQ → assert MongoDB document created
+- **api-gateway** — excluded (requires all downstream services; covered by Playwright E2E)
+
+**Test location:** `test/integration/{service}/src/*.integration.spec.ts`
+
+**Packages:** `supertest`, `@types/supertest`, `testcontainers`, `@testcontainers/postgresql`, `@testcontainers/mongodb`, `@testcontainers/redis`, `@testcontainers/rabbitmq`
+
+**Estimate:** 1-2 days (1 developer)
 
 ---
 
@@ -344,7 +365,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 **Estimate:** 2-3 days (1 developer)
 
-**Phase 4 Total:** 1.5-2.5 weeks
+**Phase 4 Total:** 2.5-3.5 weeks
 
 ---
 
@@ -420,7 +441,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 | **Phase 1: Developer Experience** | 2-3 weeks | After Phase 0 |
 | **Phase 2: Core Features** | 3.5-5 weeks | After Phase 1 |
 | **Phase 3: Security** | 2.5-4 weeks | After Phase 2 |
-| **Phase 4: Testing** | 1.5-2.5 weeks | Can overlap with Phase 3 |
+| **Phase 4: Testing** | 2.5-3.5 weeks | Can overlap with Phase 3 |
 | **Phase 5: Advanced** | 2-3 weeks | After Phase 3 & 4 |
 | **Phase 6: Deployment** | 2-2.5 weeks | After all phases complete |
 
@@ -435,9 +456,9 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 ## Critical Path
 1. **Phase 0.1:** Nx setup (foundation for shared libraries)
 2. **Phase 0.2:** Package updates (Angular 22, Vitest, TypeScript 6) - enables modern tooling
-3. **Phase 0.3:** Backend e2e test rewrite (replace placeholder scaffolding with real tests)
-4. **Phase 0.7:** Pre-commit hooks (enforce code quality from start)
-5. **Phase 0.6:** Extract shared libraries (reduce duplication)
+3. **Phase 0.3:** Restructure infrastructure folder (move infrastructure to root)
+4. **Phase 0.6:** Pre-commit hooks (enforce code quality from start)
+5. **Phase 0.5:** Extract shared libraries (reduce duplication)
 4. **Phase 1:** Database migrations (required before production deployment)
 5. **Phase 1:** Structured logging (foundation for request/response logging)
 6. **Phase 1:** API contract with ts-rest (enables type-safe frontend/backend communication)

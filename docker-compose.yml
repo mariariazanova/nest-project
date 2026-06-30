@@ -1,23 +1,2 @@
 include:
-  - backend/infrastructure/docker-compose.yml
-
-services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "4200:80"
-    depends_on:
-      api-gateway:
-        condition: service_healthy
-    networks:
-      - microservices-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+  - infrastructure/docker-compose.yml

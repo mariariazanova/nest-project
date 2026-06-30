@@ -18,7 +18,7 @@ function log(color, message) {
 try {
   log('yellow', 'Stopping all containers and removing volumes...');
 
-  const infrastructurePath = path.join(__dirname, '../infrastructure');
+  const infrastructurePath = path.join(__dirname, '../../infrastructure');
 
   // Docker compose down -v
   execSync('docker-compose down -v', {
