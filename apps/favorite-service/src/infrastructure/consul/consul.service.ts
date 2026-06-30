@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as Consul from 'consul';
+import Consul from 'consul';
 
 @Injectable()
 export class ConsulService implements OnModuleInit, OnModuleDestroy {
@@ -11,13 +11,9 @@ export class ConsulService implements OnModuleInit, OnModuleDestroy {
   private checkInterval: NodeJS.Timeout;
 
   constructor(private config: ConfigService) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ConsulConstructor = (Consul as any).default || Consul;
-
-    this.consul = new ConsulConstructor({
+    this.consul = new Consul({
       host: this.config.get('CONSUL_HOST', 'localhost'),
-      port: this.config.get('CONSUL_PORT', '8500'),
-      promisify: true,
+      port: parseInt(this.config.get('CONSUL_PORT', '8500')),
     });
 
     this.serviceId = `favorite-service-${process.env.HOSTNAME || 'local'}-${Date.now()}`;

@@ -27,7 +27,6 @@ export class FavoriteService {
     if (category) {
       params = params.set('category', category);
     }
-    console.log(this.url(), this.navigationService.getLink('favorites'));
     return this.http.get<{ data: Favorite[] }>(this.url(), { params }).pipe(map((res) => res.data));
   }
 

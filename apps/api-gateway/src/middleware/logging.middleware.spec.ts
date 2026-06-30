@@ -7,7 +7,7 @@ describe('LoggingMiddleware', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
   let mockNext: NextFunction;
-  let loggerSpy: jest.SpyInstance;
+  let loggerSpy: jest.Spied<typeof Logger.prototype.log>;
 
   beforeEach(() => {
     middleware = new LoggingMiddleware();

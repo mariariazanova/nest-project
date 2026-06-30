@@ -11,23 +11,23 @@ describe('LoginService', () => {
   });
 
   it('should be created', () => {
-    expect(service).toBeTruthy();
+    expect(service).toBeInstanceOf(LoginService);
   });
 
   it('should have default isLoggedIn = false', () => {
-    expect(service.isLoggedIn()).toBeFalse();
+    expect(service.isLoggedIn()).toBe(false);
   });
 
   it('should set isLoggedIn to true', () => {
     service.setLoggedIn(true);
 
-    expect(service.isLoggedIn()).toBeTrue();
+    expect(service.isLoggedIn()).toBe(true);
   });
 
   it('should set isLoggedIn to false', () => {
     service.setLoggedIn(true);
     service.setLoggedIn(false);
 
-    expect(service.isLoggedIn()).toBeFalse();
+    expect(service.isLoggedIn()).toBe(false);
   });
 });

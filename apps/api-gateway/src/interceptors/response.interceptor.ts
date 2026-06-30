@@ -7,11 +7,9 @@ import { Request } from 'express';
 export class ResponseInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const request = context.switchToHttp().getRequest<Request>();
-    console.log('request', request);
 
     return next.handle().pipe(
       map((data) => {
-        console.log('response', data);
         if (data && data.data !== undefined) {
           return data;
         }

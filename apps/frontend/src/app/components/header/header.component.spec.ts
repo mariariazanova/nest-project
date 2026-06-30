@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MockInstance } from 'vitest';
 
 import { HeaderComponent } from './header.component';
 import { LoginService } from '../../services/login.service';
@@ -13,7 +14,7 @@ describe('HeaderComponent', () => {
   let fixture: ComponentFixture<HeaderComponent>;
   let loginServiceMock: LoginService;
   let routerMock: Router;
-  let navigateSpy: jasmine.Spy;
+  let navigateSpy: MockInstance;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -24,7 +25,7 @@ describe('HeaderComponent', () => {
     fixture = TestBed.createComponent(HeaderComponent);
     loginServiceMock = TestBed.inject(LoginService);
     routerMock = TestBed.inject(Router);
-    navigateSpy = spyOn(routerMock, 'navigate');
+    navigateSpy = vi.spyOn(routerMock, 'navigate').mockResolvedValue(true);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -34,15 +35,15 @@ describe('HeaderComponent', () => {
   });
 
   it('should compute isLoggedIn from LoginService', () => {
-    expect(component.isLoggedIn()).toBeFalse();
+    expect(component.isLoggedIn()).toBe(false);
   });
 
   it('#openLoginModal should open and #closeLoginModal should close the login modal', () => {
     component.openLoginModal();
-    expect(component.isLoginModalOpen).toBeTrue();
+    expect(component.isLoginModalOpen).toBe(true);
 
     component.closeLoginModal();
-    expect(component.isLoginModalOpen).toBeFalse();
+    expect(component.isLoginModalOpen).toBe(false);
   });
 
   it('#onLogin should set userName and call setLoggedIn(true) on login', () => {
@@ -50,7 +51,7 @@ describe('HeaderComponent', () => {
 
     expect(loginServiceMock.setLoggedIn).toHaveBeenCalledWith(true);
     expect(component.userName()).toBe('alice');
-    expect(component.isLoginModalOpen).toBeFalse();
+    expect(component.isLoginModalOpen).toBe(false);
   });
 
   it('#onLogin should call setLoggedIn(false) and close modal when no user is passed', () => {
@@ -58,7 +59,7 @@ describe('HeaderComponent', () => {
 
     expect(loginServiceMock.setLoggedIn).toHaveBeenCalledWith(false);
     expect(component.userName()).toBeNull();
-    expect(component.isLoginModalOpen).toBeFalse();
+    expect(component.isLoginModalOpen).toBe(false);
   });
 
   it('#onLogout should logout and navigate to root', () => {

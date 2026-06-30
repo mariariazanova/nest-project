@@ -1,5 +1,4 @@
 import { Component, computed, DestroyRef, inject, signal, Signal } from '@angular/core';
-import { NgIf } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LoginService } from '../../services/login.service';
 import { LoginComponent } from '../login/login.component';
@@ -10,24 +9,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [NgIf, LoginComponent, RouterLink],
+  imports: [LoginComponent, RouterLink],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
 })
 export class HeaderComponent {
   isLoginModalOpen = false;
-  isLoggedIn: Signal<boolean>;
   userName = signal<string | null>(null);
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly authService = inject(LoginService);
+  private readonly userService = inject(UserService);
+  private readonly router = inject(Router);
 
-  constructor(
-    private readonly authService: LoginService,
-    private readonly userService: UserService,
-    private readonly router: Router,
-  ) {
-    this.isLoggedIn = computed(() => this.authService.isLoggedIn());
-  }
+  isLoggedIn: Signal<boolean> = computed(() => this.authService.isLoggedIn());
 
   openLoginModal() {
     this.isLoginModalOpen = true;

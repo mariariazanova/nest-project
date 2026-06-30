@@ -1,6 +1,5 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NgForOf, NgIf } from '@angular/common';
 import { FavoriteService } from '../../services/favorite.service';
 import { LoginService } from '../../services/login.service';
 import { Favorite } from '../../interfaces/favorites';
@@ -8,7 +7,7 @@ import { Favorite } from '../../interfaces/favorites';
 @Component({
   selector: 'app-favorites',
   standalone: true,
-  imports: [NgForOf, NgIf],
+  imports: [],
   templateUrl: './favorites.component.html',
   styleUrl: './favorites.component.scss',
 })
@@ -28,11 +27,8 @@ export class FavoritesComponent implements OnInit {
   selectedCategory = '';
 
   private readonly destroyRef = inject(DestroyRef);
-
-  constructor(
-    private readonly favoriteService: FavoriteService,
-    readonly loginService: LoginService,
-  ) {}
+  private readonly favoriteService = inject(FavoriteService);
+  readonly loginService = inject(LoginService);
 
   ngOnInit(): void {
     if (this.loginService.isLoggedIn()) {
@@ -52,8 +48,12 @@ export class FavoritesComponent implements OnInit {
           this.favorites.set(data);
           this.isLoading.set(false);
         },
-        error: () => {
-          this.errorMessage.set('Nie udało się załadować ulubionych.');
+        error: (err) => {
+          if (err?.status === 404) {
+            this.favorites.set([]);
+          } else {
+            this.errorMessage.set('Nie udało się załadować ulubionych.');
+          }
           this.isLoading.set(false);
         },
       });

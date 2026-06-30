@@ -25,7 +25,7 @@ export class TokenBlacklistService {
 
       this.logger.log(`Token blacklisted: ${tokenHash.substring(0, 10)}...`);
     } catch (error) {
-      this.logger.error(`Failed to blacklist token: ${error.message}`);
+      this.logger.error(`Failed to blacklist token: ${(error as Error).message}`);
       throw error;
     }
   }
@@ -44,7 +44,7 @@ export class TokenBlacklistService {
 
       return isBlacklisted;
     } catch (error) {
-      this.logger.error(`Failed to check token blacklist: ${error.message}`);
+      this.logger.error(`Failed to check token blacklist: ${(error as Error).message}`);
       // Fail closed - treat errors as blacklisted for security
       return true;
     }

@@ -29,8 +29,8 @@ describe('RecommendationsComponent', () => {
 
   it('should update recommendations and show page when data is present', () => {
     expect(component.recommendations).toEqual(suggestionMock.items);
-    expect(component.isRecommendationsPageShown).toBeTrue();
-    expect(component.isLoading).toBeFalse();
+    expect(component.isRecommendationsPageShown).toBe(true);
+    expect(component.isLoading).toBe(false);
   });
 
   it('should call setSuggestions(null) on destroy', () => {
@@ -45,7 +45,7 @@ describe('RecommendationsComponent', () => {
     component.returnChoicePage();
 
     expect(suggestionServiceMock.setSuggestions).toHaveBeenCalledWith(null);
-    expect(component.isRecommendationsPageShown).toBeFalse();
+    expect(component.isRecommendationsPageShown).toBe(false);
   });
 
   it('#showTooltip should show tooltip with correct position', () => {
@@ -54,7 +54,7 @@ describe('RecommendationsComponent', () => {
     targetMock.classList.add('recommendations-container');
     document.body.appendChild(targetMock);
 
-    spyOn(targetMock, 'getBoundingClientRect').and.returnValue({
+    vi.spyOn(targetMock, 'getBoundingClientRect').mockReturnValue({
       left: 100,
       top: 100,
       right: 150,

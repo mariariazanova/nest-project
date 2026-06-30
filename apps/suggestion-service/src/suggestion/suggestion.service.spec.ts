@@ -284,7 +284,7 @@ describe('SuggestionService', () => {
 
       expect(bookRepo.findOne).toHaveBeenCalledWith({
         where: { id: '123' },
-        relations: ['moods', 'genres', 'events'],
+        relations: { moods: true, genres: true, events: true },
       });
       expect(result).toEqual(mockBook);
     });

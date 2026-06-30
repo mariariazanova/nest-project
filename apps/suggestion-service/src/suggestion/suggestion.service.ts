@@ -154,7 +154,7 @@ export class SuggestionService {
     // Query database
     const item = await repo.findOne({
       where: { id },
-      relations: ['moods', 'genres', 'events'],
+      relations: { moods: true, genres: true, events: true },
     });
 
     if (!item) {

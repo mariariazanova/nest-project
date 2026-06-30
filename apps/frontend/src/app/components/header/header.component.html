@@ -3,49 +3,49 @@
     <nav class="nav">
       <a routerLink="/" class="nav-link">Polecajka</a>
 
-      <a
-        *ngIf="isLoggedIn()"
-        [routerLink]="['/recommendations-history']"
-        class="nav-link"
-      >
-        Historia rekomendacji
-      </a>
+      @if (isLoggedIn()) {
+        <a [routerLink]="['/recommendations-history']" class="nav-link">
+          Historia rekomendacji
+        </a>
+      }
 
-      <a
-        *ngIf="isLoggedIn()"
-        [routerLink]="['/favorites']"
-        class="nav-link"
-      >
-        Ulubione
-      </a>
+      @if (isLoggedIn()) {
+        <a [routerLink]="['/favorites']" class="nav-link">
+          Ulubione
+        </a>
+      }
     </nav>
 
-    <button
-      *ngIf="!isLoggedIn()"
-      class="login-button"
-      (click)="openLoginModal()"
-    >
-      Zaloguj się
-    </button>
+    @if (!isLoggedIn()) {
+      <button class="login-button" (click)="openLoginModal()">
+        Zaloguj się
+      </button>
+    }
 
-    <div *ngIf="isLoggedIn()" class="user-profile">
-      <div class="profile-circle">
-        <span>{{ userName() }}</span>
+    @if (isLoggedIn()) {
+      <div class="user-profile">
+        <div class="profile-circle">
+          <span>{{ userName() }}</span>
+        </div>
+        <button class="login-button" (click)="onLogout()">Wyloguj się</button>
       </div>
-
-      <button class="login-button" (click)="onLogout()">Wyloguj się</button>
-    </div>
+    }
   </div>
 </header>
 
-<app-login
-  *ngIf="isLoginModalOpen"
-  (login)="onLogin($event)"
-  (cancel)="closeLoginModal()"
-></app-login>
+@if (isLoginModalOpen) {
+  <app-login
+    (login)="onLogin($event)"
+    (loginCancel)="closeLoginModal()"
+  ></app-login>
+}
 
-<div
-  *ngIf="isLoginModalOpen"
-  class="login-modal-overlay"
-  (click)="closeLoginModal()"
-></div>
+@if (isLoginModalOpen) {
+  <div
+    class="login-modal-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeLoginModal()"
+    (keydown.escape)="closeLoginModal()"
+  ></div>
+}

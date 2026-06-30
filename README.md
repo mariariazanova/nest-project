@@ -1,7 +1,7 @@
 # Suggestify
 
 A production-ready microservices-based recommendation system that provides personalized suggestions for films, books, songs, and games
-based on user criteria such as mood, genre, and events. Built with NestJS and Angular 18, featuring comprehensive monitoring,
+based on user criteria such as mood, genre, and events. Built with NestJS and Angular 22, featuring comprehensive monitoring,
 caching, event-driven architecture, and fault tolerance.
 
 ## Table of Contents
@@ -76,7 +76,7 @@ Infrastructure Components:
 ### Frontend Application
 ```
 ┌─────────────────────────────┐
-│   Angular 18 Frontend       │
+│   Angular 22 Frontend       │
 │   Port: 4200 (dev)          │
 │   Standalone Components     │
 │   Nginx (production)        │
@@ -122,17 +122,18 @@ Infrastructure Components:
 - **Circuit Breaker**: Opossum (fault tolerance)
 - **Rate Limiting**: NestJS Throttler (100 req/min)
 - **Validation**: class-validator with DTOs
-- **Testing**: Jest (unit tests) + Supertest (e2e tests)
+- **Testing**: Jest + ts-jest (unit tests) + Supertest (e2e tests)
 - **API Testing**: Postman collection with automated flows
 
 ### Frontend Technologies
-- **Framework**: Angular 18
-- **Architecture**: Standalone components (no NgModules)
+- **Framework**: Angular 22
+- **Architecture**: Standalone components (no NgModules), built-in control flow (`@if`, `@for`)
 - **Language**: TypeScript
-- **State Management**: Angular Signals
+- **State Management**: Angular Signals, `inject()` function
 - **HTTP Client**: Angular HttpClient with interceptors
 - **Async Operations**: RxJS
 - **Styling**: SCSS
+- **Testing**: Vitest 4 with `@angular/build:unit-test` executor
 - **Web Server**: Nginx (production)
 
 ### Databases
@@ -499,8 +500,9 @@ npx nx print-affected --target=build
 
 ### Nx Migration Status
 
-The project has completed **Phase 0.1: Nx Setup**:
+The project has completed **Phase 0.1: Nx Setup** and **Phase 0.2: Package Updates & Quality**:
 
+**Phase 0.1** ✅:
 - ✅ Nx workspace initialized with local caching
 - ✅ All 5 NestJS services migrated to apps/
 - ✅ Angular frontend migrated to apps/
@@ -508,11 +510,20 @@ The project has completed **Phase 0.1: Nx Setup**:
 - ✅ CI/CD updated to use Nx affected commands
 - ✅ Docker configuration updated for Nx workspace
 
+**Phase 0.2** ✅:
+- ✅ All 6 projects build without errors
+- ✅ All 6 projects lint cleanly (ESLint flat config, angular-eslint)
+- ✅ Backend unit tests running via `@nx/jest:jest` (374 tests, 5 services)
+- ✅ Frontend unit tests running via `@angular/build:unit-test` + Vitest (78 tests)
+- ✅ Frontend modernized: built-in control flow (`@if`/`@for`), `inject()` function
+- ✅ Unused packages removed (`vite-tsconfig-paths`)
+
 **Future Phases** (see ENHANCEMENT-PLAN.md):
-- Phase 0.2: Move infrastructure to root
-- Phase 0.3: Remove RxJS duplication workaround
+- Phase 0.3: Rewrite backend E2E tests (currently scaffold stubs)
 - Phase 0.4: Extract shared libraries (metrics, consul, circuit-breaker, health)
 - Phase 0.5: Add pre-commit hooks with Husky
+- Phase 0.6: Remove RxJS duplication workaround
+- Phase 0.7: Performance & DX improvements
 
 ### Working with the Monorepo
 
@@ -1459,7 +1470,7 @@ All endpoints return standardized error responses:
 
 ## Frontend Application
 
-The project includes a modern Angular 18 frontend application with standalone components.
+The project includes a modern Angular 22 frontend application with standalone components.
 
 ### Features
 
@@ -1472,9 +1483,11 @@ The project includes a modern Angular 18 frontend application with standalone co
 
 ### Architecture
 
-**Standalone Components** (Angular 18):
+**Standalone Components** (Angular 22):
 - No NgModules - fully standalone architecture
 - Component-level imports for better tree-shaking
+- Built-in control flow (`@if`, `@for`) instead of structural directives
+- `inject()` function for dependency injection
 - Lazy-loaded routes for optimal performance
 
 **State Management**:

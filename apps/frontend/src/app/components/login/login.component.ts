@@ -8,7 +8,6 @@ import {
   UntypedFormGroup,
   ValidationErrors,
 } from '@angular/forms';
-import { NgIf } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY } from 'rxjs';
 import { LoginService } from '../../services/login.service';
@@ -21,27 +20,24 @@ import { Property } from '../../enums/property';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, NgIf, ReactiveFormsModule],
+  imports: [FormsModule, ReactiveFormsModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })
 export class LoginComponent implements OnInit {
   @Output() login = new EventEmitter<UserWithoutPassword>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() loginCancel = new EventEmitter<void>();
 
   loginForm!: UntypedFormGroup;
 
   private readonly destroyRef = inject(DestroyRef);
+  private readonly fb = inject(FormBuilder);
+  private readonly authService = inject(LoginService);
+  private readonly userService = inject(UserService);
 
   get isNewAccountCreated(): boolean {
     return this.loginForm.get('isNewAccountCreated')?.value;
   }
-
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly authService: LoginService,
-    private readonly userService: UserService,
-  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -84,7 +80,7 @@ export class LoginComponent implements OnInit {
   }
 
   onCancel() {
-    this.cancel.emit();
+    this.loginCancel.emit();
   }
 
   getErrorMessage(controlName: string): string | null {

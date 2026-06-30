@@ -74,8 +74,11 @@
     },
     "test": {
       "executor": "@angular/build:unit-test",
+      "outputs": ["{workspaceRoot}/coverage/apps/frontend"],
       "options": {
-        "watch": false
+        "tsConfig": "apps/frontend/tsconfig.spec.json",
+        "setupFiles": ["apps/frontend/src/test-setup.ts"],
+        "runnerConfig": true
       }
     },
     "serve-static": {

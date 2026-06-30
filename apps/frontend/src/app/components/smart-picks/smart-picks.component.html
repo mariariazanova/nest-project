@@ -2,14 +2,15 @@
     <h2 class="step-title">{{ slides[currentStep].title }}</h2>
 
     <div class="tags">
-      <button
-        *ngFor="let tag of slides[currentStep].tags"
-        class="choice-button"
-        [class.selected]="isSelected(tag.value, slides[currentStep].value)"
-        (click)="onTagClick(tag.value, slides[currentStep].value)"
-      >
-        {{ tag.label }}
-      </button>
+      @for (tag of slides[currentStep].tags; track tag.value) {
+        <button
+          class="choice-button"
+          [class.selected]="isSelected(tag.value, slides[currentStep].value)"
+          (click)="onTagClick(tag.value, slides[currentStep].value)"
+        >
+          {{ tag.label }}
+        </button>
+      }
     </div>
 
     <div class="controls">

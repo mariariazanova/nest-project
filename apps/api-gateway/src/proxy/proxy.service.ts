@@ -61,15 +61,16 @@ export class ProxyService {
               }),
             );
           } catch (error) {
+            const err = error as { response?: { status: number; data: unknown } };
             // If 4xx - don't throw error, only return response
-            if (error.response?.status >= 400 && error.response?.status < 500) {
+            if (err.response?.status >= 400 && err.response?.status < 500) {
               this.logger.debug(
-                `Client error ${error.response.status} - not a circuit breaker failure`,
+                `Client error ${err.response.status} - not a circuit breaker failure`,
               );
               // Return object (it's not an error for Circuit Breaker)
               return {
-                status: error.response.status,
-                data: error.response.data,
+                status: err.response.status,
+                data: err.response.data,
               };
             }
             // If 5xx or timeout - throw error (Circuit Breaker will count it)

@@ -3,48 +3,43 @@ import {
   ChangeDetectorRef,
   Component,
   effect,
-  EventEmitter,
+  inject,
   OnDestroy,
-  Output,
 } from '@angular/core';
-import { NgForOf, NgIf } from '@angular/common';
 import { SuggestionService } from '../../services/suggestion.service';
 import { DataBaseRecommendItem } from '../../interfaces/data-base';
 
 @Component({
   selector: 'app-recommendations',
   standalone: true,
-  imports: [NgForOf, NgIf],
+  imports: [],
   templateUrl: './recommendations.component.html',
   styleUrl: './recommendations.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RecommendationsComponent implements OnDestroy {
-  @Output() recommendationRequired = new EventEmitter<boolean>();
-
   recommendations: DataBaseRecommendItem[] | null = null;
   activeTooltip: DataBaseRecommendItem | null = null;
   isRecommendationsPageShown = false;
   isLoading = false;
   tooltipPosition = { top: 0, left: 0 };
 
-  constructor(
-    private readonly suggestionService: SuggestionService,
-    private readonly changeDetector: ChangeDetectorRef,
-  ) {
+  private readonly suggestionService = inject(SuggestionService);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+
+  constructor() {
     effect(() => {
       const data = this.suggestionService.suggestions();
       const isDataLoading = this.suggestionService.isSuggestionLoading();
 
-      if (isDataLoading) {
-        this.isLoading = isDataLoading;
-      }
+      this.isLoading = isDataLoading;
 
       if (data) {
         this.recommendations = data.items;
         this.isRecommendationsPageShown = true;
-        this.changeDetector.detectChanges();
       }
+
+      this.changeDetector.markForCheck();
     });
   }
 

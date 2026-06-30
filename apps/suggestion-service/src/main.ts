@@ -42,7 +42,7 @@ async function bootstrap() {
     await seedService.seedData();
     logger.log(`Data seeded successfully`);
   } catch (error) {
-    logger.warn(`Seed failed (may already exist): ${error.message}`);
+    logger.warn(`Seed failed (may already exist): ${(error as Error).message}`);
   }
 
   await app.listen(PORT);

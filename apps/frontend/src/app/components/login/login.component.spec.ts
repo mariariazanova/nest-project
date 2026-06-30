@@ -32,10 +32,10 @@ describe('LoginComponent', () => {
     const form = component.loginForm;
 
     expect(form).toBeTruthy();
-    expect(form.contains('isNewAccountCreated')).toBeTrue();
-    expect(form.contains('userName')).toBeTrue();
-    expect(form.contains('password')).toBeTrue();
-    expect(form.get('isNewAccountCreated')?.value).toBeFalse();
+    expect(form.contains('isNewAccountCreated')).toBe(true);
+    expect(form.contains('userName')).toBe(true);
+    expect(form.contains('password')).toBe(true);
+    expect(form.get('isNewAccountCreated')?.value).toBe(false);
     expect(form.get('userName')?.value).toBeNull();
     expect(form.get('password')?.value).toBeNull();
   });
@@ -47,11 +47,11 @@ describe('LoginComponent', () => {
       isNewAccountCreated: true,
     });
 
-    expect(component.isNewAccountCreated).toBeTrue();
+    expect(component.isNewAccountCreated).toBe(true);
   });
 
   it('#onLogin should emit login event for existing user', () => {
-    spyOn(component.login, 'emit');
+    vi.spyOn(component.login, 'emit');
 
     component.loginForm.setValue({
       userName: 'alice',
@@ -66,7 +66,7 @@ describe('LoginComponent', () => {
   });
 
   it('#onLogin should emit login event for new user', () => {
-    spyOn(component.login, 'emit');
+    vi.spyOn(component.login, 'emit');
 
     component.loginForm.setValue({
       userName: 'alice',
@@ -81,11 +81,11 @@ describe('LoginComponent', () => {
   });
 
   it('#onCancel should emit cancel event', () => {
-    spyOn(component.cancel, 'emit');
+    vi.spyOn(component.loginCancel, 'emit');
 
     component.onCancel();
 
-    expect(component.cancel.emit).toHaveBeenCalled();
+    expect(component.loginCancel.emit).toHaveBeenCalled();
   });
 
   it('#getControlErrorMessages should return error message when control exists', () => {

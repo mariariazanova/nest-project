@@ -32,15 +32,15 @@ describe('SmartPicksComponent', () => {
     component.currentStep = 0;
     component.userChoice.mood = 'happy';
 
-    expect(component.isMoodAndCategoryTagSelected).toBeTrue();
+    expect(component.isMoodAndCategoryTagSelected).toBe(true);
 
     component.currentStep = 1;
 
-    expect(component.isMoodAndCategoryTagSelected).toBeFalse();
+    expect(component.isMoodAndCategoryTagSelected).toBe(false);
 
     component.userChoice.category = 'BOOK';
 
-    expect(component.isMoodAndCategoryTagSelected).toBeTrue();
+    expect(component.isMoodAndCategoryTagSelected).toBe(true);
   });
 
   it('#slides should return slides with correct length', () => {
@@ -59,8 +59,8 @@ describe('SmartPicksComponent', () => {
   it('#isSelected should detect selected tag correctly', () => {
     component.userChoice.mood = 'excited';
 
-    expect(component.isSelected('excited', Group.MOOD)).toBeTrue();
-    expect(component.isSelected('sad', Group.MOOD)).toBeFalse();
+    expect(component.isSelected('excited', Group.MOOD)).toBe(true);
+    expect(component.isSelected('sad', Group.MOOD)).toBe(false);
   });
 
   it('#onTagClick should toggle tag selection on click', () => {
@@ -81,18 +81,16 @@ describe('SmartPicksComponent', () => {
     expect(component.currentStep).toBe(1);
   });
 
-  it('#goNextStep should call getSuggestions on last step', () => {
+  it('#goNextStep should call loadSuggestions on last step', () => {
     component.currentStep = 3;
     component.userChoice = userChoiceMock;
 
     component.goNextStep();
 
-    expect(suggestionService.setSuggestions).toHaveBeenCalledWith(null);
-    expect(suggestionService.getSuggestions).toHaveBeenCalledWith({
+    expect(suggestionService.loadSuggestions).toHaveBeenCalledWith({
       userId: 'user-id',
       criteria: userChoiceMock,
     });
-    // expect(suggestionService.setSuggestions).toHaveBeenCalledWith(suggestionMock);
   });
 
   it('#returnPreviousStep should return to previous step and clear that step value', () => {

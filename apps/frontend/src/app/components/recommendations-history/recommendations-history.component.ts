@@ -1,6 +1,5 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
-import { DatePipe, JsonPipe, NgForOf, NgIf } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { categoriesOptions, eventTagsOptions, moodTagsOptions } from '../../constants/categories';
 import { bookGenres, filmGenres, gameGenres, songGenres } from '../../constants/genre';
 import { SuggestionHistory } from '../../interfaces/suggestion';
@@ -14,7 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-recommendations-history',
   standalone: true,
-  imports: [NgIf, NgForOf, JsonPipe, DatePipe],
+  imports: [DatePipe],
   templateUrl: './recommendations-history.component.html',
   styleUrl: './recommendations-history.component.scss',
 })
@@ -28,15 +27,11 @@ export class RecommendationsHistoryComponent implements OnInit {
 
   suggestionHistory = signal<SuggestionHistory[] | null>(null);
 
-  // Track which items are already favourited: key = "category:itemId"
-  private favouriteSet = new Set<string>();
+  // Maps "category:itemId" -> favoriteId; signal ensures template rerenders on mutation
+  private favouriteMap = signal<Map<string, string>>(new Map());
   private readonly destroyRef = inject(DestroyRef);
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly favoriteService: FavoriteService,
-    private readonly suggestionHistoryService: SuggestionHistoryService,
-  ) {}
+  private readonly favoriteService = inject(FavoriteService);
+  private readonly suggestionHistoryService = inject(SuggestionHistoryService);
 
   ngOnInit() {
     this.getSuggestionHistory();
@@ -59,28 +54,53 @@ export class RecommendationsHistoryComponent implements OnInit {
   }
 
   isFavourite(category: string, itemId: string): boolean {
-    return this.favouriteSet.has(`${category}:${itemId}`);
+    return this.favouriteMap().has(`${category}:${itemId}`);
   }
 
   toggleFavourite(category: string, itemId: string, title: string): void {
     const key = `${category}:${itemId}`;
+    const existingId = this.favouriteMap().get(key);
 
-    if (this.favouriteSet.has(key)) {
-      // We don't have the favoriteId here — just remove from set optimistically
-      // A full implementation would store favoriteId per item
-      this.favouriteSet.delete(key);
+    if (existingId) {
+      // Optimistic removal — update UI before API response
+      this.favouriteMap.update((m) => {
+        const next = new Map(m);
+        next.delete(key);
+        return next;
+      });
+
+      this.favoriteService
+        .removeFavorite(existingId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          error: () => {
+            // Revert on failure
+            this.favouriteMap.update((m) => new Map(m).set(key, existingId));
+          },
+        });
     } else {
+      // Optimistic addition — update UI before API response
+      this.favouriteMap.update((m) => new Map(m).set(key, '__pending__'));
+
       this.favoriteService
         .addFavorite({ itemId, category, title })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
-          next: () => {
-            this.favouriteSet.add(key);
+          next: (fav) => {
+            // Replace placeholder with real favoriteId so deletion works
+            this.favouriteMap.update((m) => new Map(m).set(key, fav.id));
           },
           error: (err) => {
-            // Already favourited (409 Conflict) — still mark as added
             if (err.status === 409) {
-              this.favouriteSet.add(key);
+              // Already exists on server — reload to get the real favoriteId
+              this.loadExistingFavourites();
+            } else {
+              // Revert on failure
+              this.favouriteMap.update((m) => {
+                const next = new Map(m);
+                next.delete(key);
+                return next;
+              });
             }
           },
         });
@@ -102,9 +122,7 @@ export class RecommendationsHistoryComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          res.forEach((f) => {
-            this.favouriteSet.add(`${f.category}:${f.itemId}`);
-          });
+          this.favouriteMap.set(new Map(res.map((f) => [`${f.category}:${f.itemId}`, f.id])));
         },
       });
   }

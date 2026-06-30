@@ -36,7 +36,7 @@ describe('FavoritesComponent', () => {
     });
 
     it('should start with isLoading false', () => {
-      expect(component.isLoading()).toBeFalse();
+      expect(component.isLoading()).toBe(false);
     });
 
     it('should start with no error message', () => {
@@ -53,7 +53,7 @@ describe('FavoritesComponent', () => {
   describe('ngOnInit', () => {
     it('should call loadFavorites when user is logged in', () => {
       loginService.isLoggedIn.set(true);
-      spyOn(component, 'loadFavorites');
+      vi.spyOn(component, 'loadFavorites');
       component.ngOnInit();
 
       expect(component.loadFavorites).toHaveBeenCalled();
@@ -61,7 +61,7 @@ describe('FavoritesComponent', () => {
 
     it('should not call loadFavorites when user is not logged in', () => {
       loginService.isLoggedIn.set(false);
-      spyOn(component, 'loadFavorites');
+      vi.spyOn(component, 'loadFavorites');
       component.ngOnInit();
 
       expect(component.loadFavorites).not.toHaveBeenCalled();
@@ -100,24 +100,36 @@ describe('FavoritesComponent', () => {
       expect(favoriteService.getFavorites).toHaveBeenCalledWith('books');
     });
 
-    it('should set errorMessage and stop loading on error', () => {
-      (<jasmine.Spy>favoriteService.getFavorites).and.returnValue(
+    it('should set errorMessage and stop loading on non-404 error', () => {
+      vi.mocked(favoriteService.getFavorites).mockReturnValue(
         throwError(() => new Error('fail')),
       );
       component.loadFavorites();
 
       expect(component.errorMessage()).toBe('Nie udało się załadować ulubionych.');
-      expect(component.isLoading()).toBeFalse();
+      expect(component.isLoading()).toBe(false);
     });
 
-    it('should not update favorites on error', () => {
+    it('should not update favorites on non-404 error', () => {
       component.favorites.set(favoritesMock);
-      (<jasmine.Spy>favoriteService.getFavorites).and.returnValue(
+      vi.mocked(favoriteService.getFavorites).mockReturnValue(
         throwError(() => new Error('fail')),
       );
       component.loadFavorites();
 
       expect(component.favorites()).toEqual(favoritesMock);
+    });
+
+    it('should treat 404 as empty list with no error message', () => {
+      component.favorites.set(favoritesMock);
+      vi.mocked(favoriteService.getFavorites).mockReturnValue(
+        throwError(() => ({ status: 404 })),
+      );
+      component.loadFavorites();
+
+      expect(component.favorites()).toEqual([]);
+      expect(component.errorMessage()).toBeNull();
+      expect(component.isLoading()).toBe(false);
     });
   });
 
@@ -129,7 +141,7 @@ describe('FavoritesComponent', () => {
     });
 
     it('should call loadFavorites with the new category', () => {
-      spyOn(component, 'loadFavorites');
+      vi.spyOn(component, 'loadFavorites');
       component.onCategoryChange('songs');
 
       expect(component.loadFavorites).toHaveBeenCalledWith('songs');
@@ -137,7 +149,7 @@ describe('FavoritesComponent', () => {
 
     it('should handle empty string category (reset to all)', () => {
       component.selectedCategory = 'books';
-      spyOn(component, 'loadFavorites');
+      vi.spyOn(component, 'loadFavorites');
       component.onCategoryChange('');
 
       expect(component.selectedCategory).toBe('');
@@ -151,14 +163,14 @@ describe('FavoritesComponent', () => {
     });
 
     it('should remove the favorite with the given id on success', () => {
-      (<jasmine.Spy>favoriteService.removeFavorite).and.returnValue(of(void 0));
+      vi.mocked(favoriteService.removeFavorite).mockReturnValue(of(void 0));
       component.removeFavorite('1');
 
       expect(component.favorites().find((f) => f.id === '1')).toBeUndefined();
     });
 
     it('should keep other favorites after removal', () => {
-      (<jasmine.Spy>favoriteService.removeFavorite).and.returnValue(of(void 0));
+      vi.mocked(favoriteService.removeFavorite).mockReturnValue(of(void 0));
       component.removeFavorite('1');
 
       expect(component.favorites().length).toBe(1);
@@ -166,14 +178,14 @@ describe('FavoritesComponent', () => {
     });
 
     it('should call removeFavorite service with the correct id', () => {
-      (<jasmine.Spy>favoriteService.removeFavorite).and.returnValue(of(void 0));
+      vi.mocked(favoriteService.removeFavorite).mockReturnValue(of(void 0));
       component.removeFavorite('2');
 
       expect(favoriteService.removeFavorite).toHaveBeenCalledWith('2');
     });
 
     it('should set errorMessage on removal error', () => {
-      (<jasmine.Spy>favoriteService.removeFavorite).and.returnValue(
+      vi.mocked(favoriteService.removeFavorite).mockReturnValue(
         throwError(() => new Error('fail')),
       );
       component.removeFavorite('1');
@@ -182,7 +194,7 @@ describe('FavoritesComponent', () => {
     });
 
     it('should NOT modify favorites list on removal error', () => {
-      (<jasmine.Spy>favoriteService.removeFavorite).and.returnValue(
+      vi.mocked(favoriteService.removeFavorite).mockReturnValue(
         throwError(() => new Error('fail')),
       );
       component.removeFavorite('1');

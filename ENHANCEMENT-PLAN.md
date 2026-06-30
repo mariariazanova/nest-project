@@ -17,7 +17,47 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.2. Restructure Infrastructure Folder (0.5 day)
+### 0.2. Package Updates & Dependency Modernization (1 day)
+- Upgrade Angular from 18 to 22 (includes native Vitest 4 support)
+- Upgrade all @angular/* packages to v22.0.4
+- Update TypeScript to 6.0.x (required by Angular 22)
+- Update Vite to v6+ (compatible with Angular 22)
+- Upgrade all NestJS packages to latest v10.x
+- Update all other dependencies to latest stable versions
+- Remove legacy-peer-deps where possible
+- Setup Vitest for frontend tests (replaces Karma/Jasmine)
+- Verify all services build and run after upgrades
+- Update any breaking changes in code
+
+**Benefits:**
+- Native Vitest support in Angular 22
+- Better TypeScript type checking
+- Performance improvements
+- Security patches
+- Modern tooling compatibility
+
+**Estimate:** 1 day (1 developer)
+
+---
+
+### 0.3. Rewrite Backend E2E Tests (0.5 days)
+**Current state:** All 5 backend e2e spec files (`test/e2e/*/src/**/*.spec.ts`) contain identical Nx-generated placeholder tests (`GET /api → { message: 'Hello API' }`). They don't test actual service endpoints and can't pass without real infrastructure running.
+
+**What to do:**
+- Replace placeholder specs with real integration tests for each service's actual endpoints:
+  - **auth-service-e2e** — register, login, logout, token refresh flows
+  - **suggestion-service-e2e** — get suggestions by mood/category/genre
+  - **favorite-service-e2e** — add, list, filter, remove favorites
+  - **history-service-e2e** — create and retrieve suggestion history entries
+  - **api-gateway-e2e** — proxy routing, auth middleware, health check
+- Decide on test environment strategy: Docker Compose test profile or in-memory stubs
+- Update `dependsOn` in each e2e `project.json` once serve dependencies are stable
+
+**Estimate:** 0.5 day (1 developer)
+
+---
+
+### 0.4. Restructure Infrastructure Folder (0.5 day)
 - Move `backend/infrastructure/` to root `infrastructure/`
 - Update docker-compose paths and CI/CD references
 - Infrastructure orchestrates entire system, not just backend
@@ -26,7 +66,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.3. Fix RxJS Duplication Hack (0.5 day)
+### 0.5. Fix RxJS Duplication Hack (0.5 day)
 - Remove `backend/scripts/remove-duplicate-rxjs.js` hack script
 - Move RxJS to root backend/package.json with overrides
 - Let Nx/npm handle dependency deduplication properly
@@ -35,7 +75,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.4. Extract Infrastructure Modules to Shared Libraries (2-3 days)
+### 0.6. Extract Infrastructure Modules to Shared Libraries (2-3 days)
 **Current Issue:** ~1,250 lines of duplicated infrastructure code across all 5 services
 
 **Extract to Shared Libraries:**
@@ -53,7 +93,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 0.5. Pre-commit Hooks (0.5 day)
+### 0.7. Pre-commit Hooks (0.5 day)
 - Install Husky + lint-staged
 - Run ESLint + Prettier on git commit
 - Run tests before push
@@ -61,7 +101,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 **Estimate:** 0.5 day (1 developer)
 
-**Phase 0 Total:** 1 week
+**Phase 0 Total:** 1-1.5 weeks
 
 ---
 
@@ -193,7 +233,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 **Estimate:** 7-10 days (1 developer)
 
-**Phase 2 Total:** 3-4 weeks
+**Phase 2 Total:** 3.5-5 weeks
 
 ---
 
@@ -259,7 +299,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 **Estimate:** 1-2 days (1 developer)
 
-**Phase 3 Total:** 2 weeks
+**Phase 3 Total:** 2.5-4 weeks
 
 ---
 
@@ -376,26 +416,28 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 | Phase | Duration | Dependencies |
 |-------|----------|--------------|
-| **Phase 0: Technical Debt** | 1 week | None (start immediately) |
+| **Phase 0: Technical Debt** | 1-1.5 weeks | None (start immediately) |
 | **Phase 1: Developer Experience** | 2-3 weeks | After Phase 0 |
-| **Phase 2: Core Features** | 3-4 weeks | After Phase 1 |
-| **Phase 3: Security** | 2 weeks | After Phase 2 |
+| **Phase 2: Core Features** | 3.5-5 weeks | After Phase 1 |
+| **Phase 3: Security** | 2.5-4 weeks | After Phase 2 |
 | **Phase 4: Testing** | 1.5-2.5 weeks | Can overlap with Phase 3 |
 | **Phase 5: Advanced** | 2-3 weeks | After Phase 3 & 4 |
 | **Phase 6: Deployment** | 2-2.5 weeks | After all phases complete |
 
-**Total Project Duration:** 13-17.5 weeks (~3-4.5 months)
+**Total Project Duration:** 15-19 weeks (~4-5 months)
 
-**With 1 developer:** 13-17.5 weeks sequential
-**With 2 developers:** 8-10 weeks (parallel work)
-**With 3 developers:** 7-8 weeks (parallel work)
+**With 1 developer:** 15-19 weeks sequential
+**With 2 developers:** 9-12 weeks (parallel work)
+**With 3 developers:** 8-10 weeks (parallel work)
 
 ---
 
 ## Critical Path
-1. **Phase 0:** Nx setup (foundation for shared libraries)
-2. **Phase 0:** Pre-commit hooks (enforce code quality from start)
-3. **Phase 0:** Extract shared libraries (reduce duplication)
+1. **Phase 0.1:** Nx setup (foundation for shared libraries)
+2. **Phase 0.2:** Package updates (Angular 22, Vitest, TypeScript 6) - enables modern tooling
+3. **Phase 0.3:** Backend e2e test rewrite (replace placeholder scaffolding with real tests)
+4. **Phase 0.7:** Pre-commit hooks (enforce code quality from start)
+5. **Phase 0.6:** Extract shared libraries (reduce duplication)
 4. **Phase 1:** Database migrations (required before production deployment)
 5. **Phase 1:** Structured logging (foundation for request/response logging)
 6. **Phase 1:** API contract with ts-rest (enables type-safe frontend/backend communication)
@@ -411,6 +453,8 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ## Risk Factors
 - **Nx migration:** First-time monorepo tooling setup may require learning curve
+- **Package updates (Phase 0.2):** Angular 18→22 and TypeScript 5→6 are major version jumps with potential breaking changes
+- **Vitest migration:** Moving from Karma/Jasmine to Vitest may require test syntax updates
 - **Shared library coupling:** Balance between DRY and microservice independence
 - **ts-rest adoption:** New paradigm (contract-first) requires team buy-in and learning
 - **Zod schema validation:** Team needs to learn Zod for runtime validation

@@ -20,7 +20,7 @@ export class HealthController {
     return this.health.check([
       () => this.http.pingCheck('auth-service', 'http://auth-service:3001/health'),
       () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-      () => this.memory.checkRSS('memory_rss', 150 * 1024 * 1024),
+      () => this.memory.checkRSS('memory_rss', 512 * 1024 * 1024),
     ]);
   }
 }

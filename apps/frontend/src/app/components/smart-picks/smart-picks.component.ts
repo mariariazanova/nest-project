@@ -1,7 +1,5 @@
-import { Component, DestroyRef, inject } from '@angular/core';
-import { NgClass, NgForOf, NgIf } from '@angular/common';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, of, tap } from 'rxjs';
+import { Component, inject } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { SuggestionService } from '../../services/suggestion.service';
 import { UserService } from '../../services/user.service';
 import { UserChoice, UserChoiceGroup } from '../../interfaces/user-choice';
@@ -15,7 +13,7 @@ import { categoriesOptions, eventTagsOptions, moodTagsOptions } from '../../cons
 @Component({
   selector: 'app-smart-picks',
   standalone: true,
-  imports: [NgForOf, NgIf, NgClass],
+  imports: [NgClass],
   templateUrl: './smart-picks.component.html',
   styleUrl: './smart-picks.component.scss',
 })
@@ -54,7 +52,8 @@ export class SmartPicksComponent {
     [Category.SONG]: songGenres,
     [Category.GAME]: gameGenres,
   };
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly suggestionService = inject(SuggestionService);
+  private readonly userService = inject(UserService);
 
   get slides() {
     const result = [...this.slidesBase];
@@ -90,11 +89,6 @@ export class SmartPicksComponent {
     return stepMoveMap[this.slides[this.currentStep].value]();
   }
 
-  constructor(
-    private readonly suggestionService: SuggestionService,
-    private readonly userService: UserService,
-  ) {}
-
   isSelected(tag: string, group: UserChoiceGroup): boolean {
     return this.userChoice[group] === tag;
   }
@@ -109,29 +103,15 @@ export class SmartPicksComponent {
     if (this.currentStep < this.steps.length - 1) {
       this.currentStep += 1;
     } else {
-      this.suggestionService
-        .getSuggestions({
-          userId: this.userService.userId!,
-          criteria: {
-            category: this.userChoice.category,
-            mood: this.userChoice.mood,
-            genre: this.userChoice.genre,
-            tag: this.userChoice.tag,
-          },
-        })
-        .pipe(
-          tap(() => this.suggestionService.setSuggestions(null)),
-          tap(() => this.suggestionService.setIsSuggestionLoading(true)),
-          takeUntilDestroyed(this.destroyRef),
-          catchError(() => {
-            return of(null);
-          }),
-        )
-        .subscribe((suggestion) => {
-          console.log(suggestion);
-          this.suggestionService.setIsSuggestionLoading(false);
-          this.suggestionService.setSuggestions(suggestion);
-        });
+      this.suggestionService.loadSuggestions({
+        userId: this.userService.userId!,
+        criteria: {
+          category: this.userChoice.category,
+          mood: this.userChoice.mood,
+          genre: this.userChoice.genre,
+          tag: this.userChoice.tag,
+        },
+      });
     }
   }
 

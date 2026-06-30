@@ -25,7 +25,7 @@ export default [
                     prefix: "app",
                     style: "kebab-case"
                 }
-            ]
+            ],
         }
     },
     {

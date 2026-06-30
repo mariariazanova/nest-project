@@ -8,22 +8,22 @@ import { ProxyService } from './proxy.service';
 export class ProxyController {
   constructor(private readonly proxyService: ProxyService) {}
 
-  @All('auth/*')
+  @All('auth/*path')
   async proxyAuth(@Req() req: Request, @Res() res: Response) {
     return this.proxyService.forward(req, res, 'auth-service');
   }
 
-  @All('suggestion*')
+  @All(['suggestion', 'suggestion/*path'])
   async proxySuggestion(@Req() req: Request, @Res() res: Response) {
     return this.proxyService.forward(req, res, 'suggestion-service');
   }
 
-  @All('history*')
+  @All(['history', 'history/*path'])
   async proxyHistory(@Req() req: Request, @Res() res: Response) {
     return this.proxyService.forward(req, res, 'history-service');
   }
 
-  @All('favorite*')
+  @All(['favorite', 'favorite/*path'])
   async proxyFavorite(@Req() req: Request, @Res() res: Response) {
     return this.proxyService.forward(req, res, 'favorite-service');
   }

@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
+import KeyvRedis from '@keyv/redis';
 
 import { HistoryModule } from './history/history.module';
 import { HealthModule } from './health/health.module';
@@ -23,8 +23,6 @@ import { MetricsModule } from './infrastructure/metrics/metrics.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         uri: config.get('MONGODB_URI'),
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
       }),
     }),
 
@@ -33,16 +31,18 @@ import { MetricsModule } from './infrastructure/metrics/metrics.module';
       isGlobal: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
-        store: await redisStore({
-          socket: {
-            host: config.get('REDIS_HOST'),
-            port: config.get('REDIS_PORT'),
-          },
-          password: config.get('REDIS_PASSWORD'),
-          ttl: 900, // 15 minutes
-        }),
-      }),
+      useFactory: (config: ConfigService) => {
+        const host = config.get<string>('REDIS_HOST', 'localhost');
+        const port = config.get<string>('REDIS_PORT', '6379');
+        const password = config.get<string>('REDIS_PASSWORD');
+        const url = password
+          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/0`
+          : `redis://${host}:${port}/0`;
+        return {
+          stores: [new KeyvRedis(url)],
+          ttl: 900_000,
+        };
+      },
     }),
 
     HistoryModule,

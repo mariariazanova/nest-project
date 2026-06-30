@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
   HttpEvent,
   HttpHandler,
@@ -11,7 +11,7 @@ import { NavigationService } from '../services/navigation.service';
 
 @Injectable()
 export class HateoasInterceptor implements HttpInterceptor {
-  constructor(private readonly navigationService: NavigationService) {}
+  private readonly navigationService = inject(NavigationService);
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     return next.handle(req).pipe(

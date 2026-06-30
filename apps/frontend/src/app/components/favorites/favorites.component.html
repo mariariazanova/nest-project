@@ -2,31 +2,38 @@
   <h2>Twoje ulubione</h2>
 
   <div class="category-filter">
-    <button
-      *ngFor="let cat of categories"
-      class="filter-button"
-      [class.active]="selectedCategory === cat.value"
-      (click)="onCategoryChange(cat.value)"
-    >
-      {{ cat.label }}
-    </button>
+    @for (cat of categories; track cat.value) {
+      <button
+        class="filter-button"
+        [class.active]="selectedCategory === cat.value"
+        (click)="onCategoryChange(cat.value)"
+      >
+        {{ cat.label }}
+      </button>
+    }
   </div>
 
-  <p *ngIf="isLoading()" class="loading">Ładowanie...</p>
+  @if (isLoading()) {
+    <p class="loading">Ładowanie...</p>
+  }
 
-  <p *ngIf="errorMessage()" class="error-message">{{ errorMessage() }}</p>
+  @if (errorMessage()) {
+    <p class="error-message">{{ errorMessage() }}</p>
+  }
 
-  <ul *ngIf="!isLoading() && favorites().length > 0; else noFavorites" class="favorites-list">
-    <li *ngFor="let favorite of favorites()" class="favorite-item">
-      <div class="favorite-info">
-        <span class="favorite-title">{{ favorite.title || favorite.itemId }}</span>
-        <span class="favorite-category">{{ favorite.category }}</span>
-      </div>
-      <button class="remove-button" (click)="removeFavorite(favorite.id)">✕</button>
-    </li>
-  </ul>
+  @if (!isLoading() && favorites().length > 0) {
+    <ul class="favorites-list">
+      @for (favorite of favorites(); track favorite.id) {
+        <li class="favorite-item">
+          <div class="favorite-info">
+            <span class="favorite-title">{{ favorite.title || favorite.itemId }}</span>
+            <span class="favorite-category">{{ favorite.category }}</span>
+          </div>
+          <button class="remove-button" (click)="removeFavorite(favorite.id)">✕</button>
+        </li>
+      }
+    </ul>
+  } @else if (!isLoading() && !errorMessage()) {
+    <p class="empty-favorites">Nie masz ulubionych.</p>
+  }
 </div>
-
-<ng-template #noFavorites>
-  <p *ngIf="!isLoading()" class="empty-favorites">Nie masz ulubionych.</p>
-</ng-template>

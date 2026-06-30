@@ -915,48 +915,6 @@ npx nx graph                          # Dependency visualization
 
 ---
 
-## Recommendations for Future Phases
-
-### Immediate (Before Starting Phase 0.2)
-1. **Create snapshot of working system**
-   ```bash
-   git add .
-   git commit -m "chore: Phase 0.1 complete - Nx workspace operational"
-   git tag phase-0.1-complete
-   ```
-
-2. **Document Windows-specific configurations** in README
-   - Dockerfile chown optimization
-   - RabbitMQ environment variables
-   - Build performance notes
-
-3. **Create migration runbook** based on lessons learned
-   - Pre-migration checklist
-   - Step-by-step verification process
-   - Rollback procedures
-
-### Phase 0.2: Infrastructure Folder Move
-**Before starting:**
-- [ ] Audit all references to `backend/infrastructure/`
-- [ ] Create file move script
-- [ ] Test locally before Docker
-- [ ] Update all paths in one commit
-
-### Phase 0.3: RxJS Duplication Fix
-**Before starting:**
-- [ ] Verify Nx handles RxJS deduplication
-- [ ] Test without `remove-duplicate-rxjs.js` script
-- [ ] Document any issues found
-
-### Phase 0.4: Shared Library Extraction
-**Critical for success:**
-- [ ] Map all duplicated code first (metrics, consul, circuit-breaker, health)
-- [ ] Create migration plan per library
-- [ ] Test each library independently
-- [ ] Update all services incrementally (not all at once)
-
----
-
 ## Conclusion
 
 Phase 0.1 successfully migrated the project to an Nx monorepo structure. While the migration took longer than estimated (~12.7 hours vs. 4-5 hours planned), this was primarily due to:

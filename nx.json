@@ -63,13 +63,6 @@
         "{workspaceRoot}/eslint.config.mjs",
         "{workspaceRoot}/tools/eslint-rules/**/*"
       ]
-    },
-    "@angular/build:unit-test": {
-      "cache": true,
-      "inputs": [
-        "default",
-        "^production"
-      ]
     }
   },
   "tasksRunnerOptions": {

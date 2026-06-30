@@ -53,7 +53,7 @@ export class CircuitBreakerService {
     const breaker = this.getBreaker(name, action);
 
     try {
-      return await breaker.fire(...args);
+      return await breaker.fire(...args) as T;
     } catch (error) {
       this.logger.error(`Circuit breaker ${name} failed:`, error);
       if (fallback) {

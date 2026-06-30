@@ -3,7 +3,6 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
-import { ResponseInterceptor } from './interceptors/response.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('APIGateway');
@@ -30,7 +29,6 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalInterceptors(new ResponseInterceptor());
   app.setGlobalPrefix('v1');
 
   const PORT = process.env.PORT || 3000;

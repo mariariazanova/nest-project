@@ -111,7 +111,7 @@ export class AuthService {
         statusCode: 200,
       };
     } catch (error) {
-      this.logger.error(`Logout error: ${error.message}`);
+      this.logger.error(`Logout error: ${(error as Error).message}`);
       throw new UnauthorizedException('Invalid token');
     }
   }

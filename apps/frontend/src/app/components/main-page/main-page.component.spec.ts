@@ -31,14 +31,12 @@ describe('MainPageComponent', () => {
   });
 
   it('should set recommendationReceived to true when suggestions exist', () => {
-    expect(component.recommendationReceived).toBeTrue();
+    expect(component.recommendationReceived()).toBe(true);
   });
 
   it('should set recommendationReceived to false if no suggestions', () => {
     suggestionService.suggestions.set(null);
 
-    fixture.detectChanges();
-
-    expect(component.recommendationReceived).toBeFalse();
+    expect(component.recommendationReceived()).toBe(false);
   });
 });

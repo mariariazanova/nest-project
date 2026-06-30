@@ -1,7 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
+import KeyvRedis from '@keyv/redis';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 // Modules
@@ -45,19 +45,18 @@ import { GlobalClientsModule } from './clients/clients.module';
       isGlobal: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (config: ConfigService) => ({
-        store: await redisStore({
-          socket: {
-            host: config.get('REDIS_HOST'),
-            port: config.get('REDIS_PORT'),
-            reconnectStrategy: (retries) => Math.min(retries * 50, 500),
-            connectTimeout: 10000,
-          },
-          password: config.get('REDIS_PASSWORD'),
-          database: 0, // DB 0 for API Gateway
-          ttl: 300, // 5 minutes
-        }),
-      }),
+      useFactory: (config: ConfigService) => {
+        const host = config.get<string>('REDIS_HOST', 'localhost');
+        const port = config.get<string>('REDIS_PORT', '6379');
+        const password = config.get<string>('REDIS_PASSWORD');
+        const url = password
+          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/0`
+          : `redis://${host}:${port}/0`;
+        return {
+          stores: [new KeyvRedis(url, { connectionTimeout: 10_000 })],
+          ttl: 300_000,
+        };
+      },
     }),
 
     GlobalClientsModule,
@@ -70,6 +69,6 @@ import { GlobalClientsModule } from './clients/clients.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggingMiddleware, MetricsMiddleware, AuthMiddleware).forRoutes('*');
+    consumer.apply(LoggingMiddleware, MetricsMiddleware, AuthMiddleware).forRoutes('*path');
   }
 }

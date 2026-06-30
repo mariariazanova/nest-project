@@ -21,9 +21,11 @@
         autocomplete="off"
       />
 
-      <p *ngIf="loginForm.get('userName')?.touched && loginForm.get('userName')?.invalid" class="error-message">
-        {{ getErrorMessage('userName') }}
-      </p>
+      @if (loginForm.get('userName')?.touched && loginForm.get('userName')?.invalid) {
+        <p class="error-message">
+          {{ getErrorMessage('userName') }}
+        </p>
+      }
     </div>
 
     <div>
@@ -35,9 +37,11 @@
         autocomplete="off"
       />
 
-      <p *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="error-message">
-        {{ getErrorMessage('password') }}
-      </p>
+      @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
+        <p class="error-message">
+          {{ getErrorMessage('password') }}
+        </p>
+      }
     </div>
   </form>
 
