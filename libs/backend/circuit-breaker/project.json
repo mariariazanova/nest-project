@@ -1,0 +1,27 @@
+{
+  "name": "circuit-breaker",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/circuit-breaker/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/circuit-breaker"],
+      "options": {
+        "jestConfig": "libs/backend/circuit-breaker/jest.config.js"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/backend/circuit-breaker",
+        "tsConfig": "libs/backend/circuit-breaker/tsconfig.lib.json",
+        "packageJson": "libs/backend/circuit-breaker/package.json",
+        "main": "libs/backend/circuit-breaker/src/index.ts",
+        "assets": ["libs/backend/circuit-breaker/*.md"]
+      }
+    }
+  }
+}

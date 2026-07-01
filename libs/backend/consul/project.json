@@ -1,0 +1,27 @@
+{
+  "name": "consul",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/consul/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/consul"],
+      "options": {
+        "jestConfig": "libs/backend/consul/jest.config.js"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/backend/consul",
+        "tsConfig": "libs/backend/consul/tsconfig.lib.json",
+        "packageJson": "libs/backend/consul/package.json",
+        "main": "libs/backend/consul/src/index.ts",
+        "assets": ["libs/backend/consul/*.md"]
+      }
+    }
+  }
+}

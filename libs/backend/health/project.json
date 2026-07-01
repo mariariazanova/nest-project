@@ -1,0 +1,27 @@
+{
+  "name": "health",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/health/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/health"],
+      "options": {
+        "jestConfig": "libs/backend/health/jest.config.js"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/backend/health",
+        "tsConfig": "libs/backend/health/tsconfig.lib.json",
+        "packageJson": "libs/backend/health/package.json",
+        "main": "libs/backend/health/src/index.ts",
+        "assets": ["libs/backend/health/*.md"]
+      }
+    }
+  }
+}

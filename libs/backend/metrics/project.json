@@ -1,0 +1,31 @@
+{
+  "name": "metrics",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/metrics/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/metrics"],
+      "options": {
+        "jestConfig": "libs/backend/metrics/jest.config.js"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/libs/backend/metrics",
+        "tsConfig": "libs/backend/metrics/tsconfig.lib.json",
+        "packageJson": "libs/backend/metrics/package.json",
+        "main": "libs/backend/metrics/src/index.ts",
+        "assets": [
+          "libs/backend/metrics/*.md"
+        ]
+      }
+    }
+  }
+}

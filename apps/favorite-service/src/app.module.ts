@@ -6,9 +6,9 @@ import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { FavoriteModule } from './favorite/favorite.module';
 import { HealthModule } from './health/health.module';
-import { ConsulModule } from './infrastructure/consul/consul.module';
-import { CircuitBreakerModule } from './infrastructure/circuit-breaker/circuit-breaker.module';
-import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { ConsulModule } from '@suggestify/backend/consul';
+import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { MetricsModule } from '@suggestify/backend/metrics';
 import { FavoriteEntity } from './favorite/entities/favorite.entity';
 
 @Module({
@@ -56,7 +56,11 @@ import { FavoriteEntity } from './favorite/entities/favorite.entity';
     }),
     FavoriteModule,
     HealthModule,
-    ConsulModule,
+    ConsulModule.forRoot({
+      serviceName: 'favorite-service',
+      servicePort: 3004,
+      tags: ['favorite', 'microservice', 'nestjs'],
+    }),
     CircuitBreakerModule,
     MetricsModule,
   ],

@@ -828,23 +828,23 @@ All packages installed at end of Phase 0.2 (including unplanned upgrades from St
 
 ### Notable Deviations from Original Plan
 
-| Package | Plan | Actual | Reason |
-|---|---|---|---|
-| `@nestjs/*` | v10 | v11 | Pre-migration codebase was v11; v10 target was incorrect |
-| `typeorm` | not in plan | `^1.0.0` | Stable release of TypeORM; breaking `relations` syntax change patched |
-| `mongoose` | not in plan | `^9.7.3` | Major upgrade; removed deprecated driver options patched |
-| `bcrypt` | not in plan | `^6.0.0` | No code changes needed |
-| `cache-manager` | not in plan | `^7.2.9` | TTL unit change (seconds → ms) patched in all 5 app modules |
-| `@keyv/redis` | not in plan | `^5.1.6` | Replaced `cache-manager-redis-yet` — v5 incompatible with `cache-manager` v7 (Keyv-based API); all 5 `app.module.ts` migrated to `stores: [new KeyvRedis(url)]` |
-| `@types/opossum` | not in plan | `^8.1.9` | `opossum` v10 has no bundled types; `breaker.fire()` return cast to `T` in all 5 circuit-breaker services |
-| `helmet` | not in plan | `^8.2.0` | No code changes needed |
-| `opossum` | not in plan | `^10.0.0` | No code changes needed |
-| `consul` | not in plan | `^2.0.1` | TypeScript import + type fixes applied in all 5 consul.service.ts files |
-| `@types/express` | not in plan | `^5.0.6` | Tied to Express v5 (bundled with NestJS v11) |
-| `@types/bcrypt` | not in plan | `^6.0.0` | Tied to bcrypt v6 |
-| `jest` | not in plan | `^30.4.2` | `jest.SpyInstance` type fix applied |
-| `@types/jest` | not in plan | `^30.0.0` | Tied to Jest 30 |
-| `ts-jest` | not in plan | `^29.4.11` | Jest 30 support (added in 29.4.0) |
+| Package          | Plan        | Actual     | Reason                                                                                                                                                          |
+|------------------|-------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@nestjs/*`      | v10         | v11        | Pre-migration codebase was v11; v10 target was incorrect                                                                                                        |
+| `typeorm`        | not in plan | `^1.0.0`   | Stable release of TypeORM; breaking `relations` syntax change patched                                                                                           |
+| `mongoose`       | not in plan | `^9.7.3`   | Major upgrade; removed deprecated driver options patched                                                                                                        |
+| `bcrypt`         | not in plan | `^6.0.0`   | No code changes needed                                                                                                                                          |
+| `cache-manager`  | not in plan | `^7.2.9`   | TTL unit change (seconds → ms) patched in all 5 app modules                                                                                                     |
+| `@keyv/redis`    | not in plan | `^5.1.6`   | Replaced `cache-manager-redis-yet` — v5 incompatible with `cache-manager` v7 (Keyv-based API); all 5 `app.module.ts` migrated to `stores: [new KeyvRedis(url)]` |
+| `@types/opossum` | not in plan | `^8.1.9`   | `opossum` v10 has no bundled types; `breaker.fire()` return cast to `T` in all 5 circuit-breaker services                                                       |
+| `helmet`         | not in plan | `^8.2.0`   | No code changes needed                                                                                                                                          |
+| `opossum`        | not in plan | `^10.0.0`  | No code changes needed                                                                                                                                          |
+| `consul`         | not in plan | `^2.0.1`   | TypeScript import + type fixes applied in all 5 consul.service.ts files                                                                                         |
+| `@types/express` | not in plan | `^5.0.6`   | Tied to Express v5 (bundled with NestJS v11)                                                                                                                    |
+| `@types/bcrypt`  | not in plan | `^6.0.0`   | Tied to bcrypt v6                                                                                                                                               |
+| `jest`           | not in plan | `^30.4.2`  | `jest.SpyInstance` type fix applied                                                                                                                             |
+| `@types/jest`    | not in plan | `^30.0.0`  | Tied to Jest 30                                                                                                                                                 |
+| `ts-jest`        | not in plan | `^29.4.11` | Jest 30 support (added in 29.4.0)                                                                                                                               |
 
 ---
 

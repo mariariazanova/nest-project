@@ -5,6 +5,7 @@
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "target": "ES2021",
@@ -13,7 +14,14 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
-    "paths": {}
+    "paths": {
+      "@suggestify/backend/metrics": ["./libs/backend/metrics/src/index.ts"],
+      "@suggestify/backend/consul": ["./libs/backend/consul/src/index.ts"],
+      "@suggestify/backend/circuit-breaker": [
+        "./libs/backend/circuit-breaker/src/index.ts"
+      ],
+      "@suggestify/backend/health": ["./libs/backend/health/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "tmp"]
 }

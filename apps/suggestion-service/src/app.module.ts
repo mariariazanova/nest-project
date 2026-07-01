@@ -6,9 +6,9 @@ import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { SuggestionModule } from './suggestion/suggestion.module';
 import { HealthModule } from './health/health.module';
-import { ConsulModule } from './infrastructure/consul/consul.module';
-import { CircuitBreakerModule } from './infrastructure/circuit-breaker/circuit-breaker.module';
-import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { ConsulModule } from '@suggestify/backend/consul';
+import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { MetricsModule } from '@suggestify/backend/metrics';
 import { BookEntity } from './suggestion/entities/book.entity';
 import { FilmEntity } from './suggestion/entities/film.entity';
 import { GameEntity } from './suggestion/entities/game.entity';
@@ -69,7 +69,11 @@ import { EventEntity } from './shared/entities/event.entity';
 
     SuggestionModule,
     HealthModule,
-    ConsulModule,
+    ConsulModule.forRoot({
+      serviceName: 'suggestion-service',
+      servicePort: 3002,
+      tags: ['suggestion', 'microservice', 'nestjs'],
+    }),
     CircuitBreakerModule,
     MetricsModule,
   ],

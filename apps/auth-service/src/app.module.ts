@@ -10,9 +10,9 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
-import { ConsulModule } from './infrastructure/consul/consul.module';
-import { CircuitBreakerModule } from './infrastructure/circuit-breaker/circuit-breaker.module';
-import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { ConsulModule } from '@suggestify/backend/consul';
+import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { MetricsModule } from '@suggestify/backend/metrics';
 import { UserEntity } from './users/entities/user.entity';
 
 @Module({
@@ -82,7 +82,11 @@ import { UserEntity } from './users/entities/user.entity';
     HealthModule,
 
     // Infrastructure
-    ConsulModule,
+    ConsulModule.forRoot({
+      serviceName: 'auth-service',
+      servicePort: 3001,
+      tags: ['auth', 'microservice', 'nestjs'],
+    }),
     CircuitBreakerModule,
     MetricsModule,
   ],

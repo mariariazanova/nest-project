@@ -6,9 +6,9 @@ import KeyvRedis from '@keyv/redis';
 
 import { HistoryModule } from './history/history.module';
 import { HealthModule } from './health/health.module';
-import { ConsulModule } from './infrastructure/consul/consul.module';
-import { CircuitBreakerModule } from './infrastructure/circuit-breaker/circuit-breaker.module';
-import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { ConsulModule } from '@suggestify/backend/consul';
+import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { MetricsModule } from '@suggestify/backend/metrics';
 
 @Module({
   imports: [
@@ -47,7 +47,11 @@ import { MetricsModule } from './infrastructure/metrics/metrics.module';
 
     HistoryModule,
     HealthModule,
-    ConsulModule,
+    ConsulModule.forRoot({
+      serviceName: 'history-service',
+      servicePort: 3003,
+      tags: ['history', 'microservice', 'nestjs'],
+    }),
     CircuitBreakerModule,
     MetricsModule,
   ],

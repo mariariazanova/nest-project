@@ -1,3 +1,9 @@
+import { pathsToModuleNameMapper } from 'ts-jest';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { compilerOptions } = require('../../tsconfig.base.json');
+
 export default {
   displayName: 'api-gateway',
   testEnvironment: 'node',
@@ -6,5 +12,6 @@ export default {
   },
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/../../' }),
   coverageDirectory: '../../coverage/apps/api-gateway',
 };

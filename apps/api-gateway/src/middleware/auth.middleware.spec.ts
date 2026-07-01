@@ -186,7 +186,7 @@ describe('AuthMiddleware', () => {
         headers: { authorization: 'Bearer valid-token' },
       } as Request;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const token = (middleware as any).extractToken(req);
 
       expect(token).toBe('valid-token');
@@ -195,7 +195,7 @@ describe('AuthMiddleware', () => {
     it('should return null when no authorization header', () => {
       const req = { headers: {} } as Request;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const token = (middleware as any).extractToken(req);
 
       expect(token).toBeNull();
@@ -206,7 +206,7 @@ describe('AuthMiddleware', () => {
         headers: { authorization: 'Basic credentials' },
       } as Request;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const token = (middleware as any).extractToken(req);
 
       expect(token).toBeNull();
@@ -218,7 +218,7 @@ describe('AuthMiddleware', () => {
       const publicPaths = ['/v1/auth/sessions', '/v1/auth/users', '/v1/health', '/v1/metrics'];
 
       publicPaths.forEach((path) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         expect((middleware as any).isPublicRoute(path)).toBe(true);
       });
     });
@@ -232,7 +232,7 @@ describe('AuthMiddleware', () => {
       ];
 
       protectedPaths.forEach((path) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         expect((middleware as any).isPublicRoute(path)).toBe(false);
       });
     });

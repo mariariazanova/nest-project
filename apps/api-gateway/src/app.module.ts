@@ -7,9 +7,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
 // Modules
 import { ProxyModule } from './proxy/proxy.module';
 import { HealthModule } from './health/health.module';
-import { ConsulModule } from './infrastructure/consul/consul.module';
-import { CircuitBreakerModule } from './infrastructure/circuit-breaker/circuit-breaker.module';
-import { MetricsModule } from './infrastructure/metrics/metrics.module';
+import { ConsulModule } from '@suggestify/backend/consul';
+import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { MetricsModule } from '@suggestify/backend/metrics';
 
 // Middleware
 import { LoggingMiddleware } from './middleware/logging.middleware';
@@ -62,7 +62,11 @@ import { GlobalClientsModule } from './clients/clients.module';
     GlobalClientsModule,
     ProxyModule,
     HealthModule,
-    ConsulModule,
+    ConsulModule.forRoot({
+      serviceName: 'api-gateway',
+      servicePort: 3000,
+      tags: ['api-gateway', 'microservice', 'nestjs'],
+    }),
     CircuitBreakerModule,
     MetricsModule,
   ],

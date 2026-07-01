@@ -5,15 +5,15 @@ import { HttpStatus } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import { ProxyService } from './proxy.service';
-import { ConsulService } from '../infrastructure/consul/consul.service';
-import { CircuitBreakerService } from '../infrastructure/circuit-breaker/circuit-breaker.service';
+import { ConsulService } from '@suggestify/backend/consul';
+import { CircuitBreakerService } from '@suggestify/backend/circuit-breaker';
 
 describe('ProxyService', () => {
   let service: ProxyService;
   let httpService: HttpService;
   let consulService: ConsulService;
   let circuitBreaker: CircuitBreakerService;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let cacheManager: any;
 
   const mockRequest = {
@@ -86,7 +86,7 @@ describe('ProxyService', () => {
         data: { message: 'Success' },
         statusText: 'OK',
         headers: {},
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         config: {} as any,
       };
 
@@ -95,7 +95,7 @@ describe('ProxyService', () => {
       (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
       (<jest.Mock>httpService.request).mockReturnValue(of(targetResponse));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(consulService.discoverService).toHaveBeenCalledWith('auth-service');
@@ -114,7 +114,7 @@ describe('ProxyService', () => {
         data: { data: 'cached' },
         statusText: 'OK',
         headers: {},
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         config: {} as any,
       };
 
@@ -122,7 +122,7 @@ describe('ProxyService', () => {
       (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
       (<jest.Mock>httpService.request).mockReturnValue(of(targetResponse));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(consulService.discoverService).not.toHaveBeenCalled();
@@ -133,7 +133,7 @@ describe('ProxyService', () => {
       cacheManager.get.mockResolvedValue(null);
       (<jest.Mock>consulService.discoverService).mockResolvedValue(null);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
@@ -152,7 +152,7 @@ describe('ProxyService', () => {
       (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
       (<jest.Mock>httpService.request).mockReturnValue(throwError(() => error));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
@@ -175,7 +175,7 @@ describe('ProxyService', () => {
       (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
       (<jest.Mock>httpService.request).mockReturnValue(throwError(() => error));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
@@ -188,21 +188,21 @@ describe('ProxyService', () => {
         data: { success: true },
         statusText: 'OK',
         headers: {},
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         config: {} as any,
       };
 
       cacheManager.get.mockResolvedValue(serviceUrl);
       (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       let capturedHeaders: any;
       (<jest.Mock>httpService.request).mockImplementation((config) => {
         capturedHeaders = config.headers;
         return of(targetResponse);
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(capturedHeaders['X-User-Id']).toBe('user123');
@@ -218,7 +218,7 @@ describe('ProxyService', () => {
         fallback(),
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
@@ -230,7 +230,7 @@ describe('ProxyService', () => {
       const baseUrl = 'http://service:3000';
       const req = { url: '/api/users?page=1&limit=10' };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const result = (service as any).buildTargetUrl(baseUrl, req);
 
       expect(result).toBe('http://service:3000/api/users');
@@ -246,7 +246,7 @@ describe('ProxyService', () => {
         'user-agent': 'test',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const filtered = (service as any).filterHeaders(headers);
 
       expect(filtered).toHaveProperty('authorization');

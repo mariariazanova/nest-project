@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Request, Response, NextFunction } from 'express';
 import { MetricsMiddleware } from './metrics.middleware';
-import { MetricsService } from '../infrastructure/metrics/metrics.service';
+import { MetricsService } from '@suggestify/backend/metrics';
 
 describe('MetricsMiddleware', () => {
   let middleware: MetricsMiddleware;

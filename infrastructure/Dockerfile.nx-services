@@ -18,6 +18,7 @@ RUN npm config set fetch-timeout 600000 && npm ci
 
 # Copy source code
 COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
+COPY libs ./libs
 
 # Build with Nx
 RUN npx nx build ${SERVICE_NAME} --prod

@@ -4,8 +4,8 @@ import { Request, Response } from 'express';
 import { firstValueFrom } from 'rxjs';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { ConsulService } from '../infrastructure/consul/consul.service';
-import { CircuitBreakerService } from '../infrastructure/circuit-breaker/circuit-breaker.service';
+import { ConsulService } from '@suggestify/backend/consul';
+import { CircuitBreakerService } from '@suggestify/backend/circuit-breaker';
 
 @Injectable()
 export class ProxyService {
@@ -164,7 +164,7 @@ export class ProxyService {
     return base;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private filterHeaders(headers: any): any {
     const filtered = { ...headers };
 
@@ -174,7 +174,7 @@ export class ProxyService {
     return filtered;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private handleError(error: any, res: Response) {
     this.logger.error('Proxy error:', error.message || error);
 

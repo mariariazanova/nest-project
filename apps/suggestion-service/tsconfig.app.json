@@ -10,7 +10,6 @@
     "emitDecoratorMetadata": true,
     "target": "es2021",
     "moduleResolution": "node",
-    "rootDir": "./src",
     "ignoreDeprecations": "6.0"
   },
   "include": [

@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
-import { ConsulService } from './infrastructure/consul/consul.service';
+import { ConsulService } from '@suggestify/backend/consul';
 
 async function bootstrap() {
   const logger = new Logger('HistoryService');
