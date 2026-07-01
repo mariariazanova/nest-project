@@ -77,14 +77,14 @@ Successfully migrated all 5 NestJS microservices to `apps/` directory using `@nx
 
 ### Compiled Output Sizes (dist/)
 
-| Application | Dist Size | Notes |
-|-------------|-----------|-------|
-| Frontend | 364 KB | Angular bundle + assets |
-| Suggestion Service | 608 KB | Largest backend service |
-| Auth Service | 288 KB | PostgreSQL + TypeORM |
-| Favorite Service | 244 KB | PostgreSQL + TypeORM |
-| History Service | 240 KB | MongoDB + Mongoose |
-| API Gateway | 128 KB | Smallest - routing only |
+| Application        | Dist Size | Notes                   |
+|--------------------|-----------|-------------------------|
+| Frontend           | 364 KB    | Angular bundle + assets |
+| Suggestion Service | 608 KB    | Largest backend service |
+| Auth Service       | 288 KB    | PostgreSQL + TypeORM    |
+| Favorite Service   | 244 KB    | PostgreSQL + TypeORM    |
+| History Service    | 240 KB    | MongoDB + Mongoose      |
+| API Gateway        | 128 KB    | Smallest - routing only |
 
 **Total compiled output**: ~1.87 MB (all 6 apps)
 
@@ -98,14 +98,14 @@ Successfully migrated all 5 NestJS microservices to `apps/` directory using `@nx
 
 ### Docker Image Sizes
 
-| Service | Image Size | Base Image |
-|---------|------------|------------|
-| Frontend | 93.2 MB | nginx:alpine |
-| API Gateway | 579 MB | node:20-alpine |
-| Auth Service | 579 MB | node:20-alpine |
-| Suggestion Service | 580 MB | node:20-alpine |
-| History Service | 578 MB | node:20-alpine |
-| Favorite Service | 578 MB | node:20-alpine |
+| Service            | Image Size | Base Image     |
+|--------------------|------------|----------------|
+| Frontend           | 93.2 MB    | nginx:alpine   |
+| API Gateway        | 579 MB     | node:20-alpine |
+| Auth Service       | 579 MB     | node:20-alpine |
+| Suggestion Service | 580 MB     | node:20-alpine |
+| History Service    | 578 MB     | node:20-alpine |
+| Favorite Service   | 578 MB     | node:20-alpine |
 
 **Total Docker images**: ~3.0 GB (6 app images)
 
@@ -150,15 +150,15 @@ Successfully migrated all 5 NestJS microservices to `apps/` directory using `@nx
 
 **Build Performance Comparison (Clean Build, No Cache):**
 
-| Metric | Before (Workspaces) | After (Nx) | Difference |
-|--------|---------------------|------------|------------|
-| **Total Build Time** | 15m 7s | 14m 11s | -56s (-6.2%) |
-| favorite-service | 11m 33s | 10m 30s | -1m 03s |
-| suggestion-service | 10m 56s | 9m 49s | -1m 07s |
-| history-service | 9m 40s | 9m 47s | +7s |
-| api-gateway | 9m 25s | 9m 46s | +21s |
-| auth-service | 5m 36s | 9m 45s | +4m 09s |
-| frontend | 4m 33s | 9m 16s | +4m 43s |
+| Metric               | Before (Workspaces) | After (Nx) | Difference   |
+|----------------------|---------------------|------------|--------------|
+| **Total Build Time** | 15m 7s              | 14m 11s    | -56s (-6.2%) |
+| favorite-service     | 11m 33s             | 10m 30s    | -1m 03s      |
+| suggestion-service   | 10m 56s             | 9m 49s     | -1m 07s      |
+| history-service      | 9m 40s              | 9m 47s     | +7s          |
+| api-gateway          | 9m 25s              | 9m 46s     | +21s         |
+| auth-service         | 5m 36s              | 9m 45s     | +4m 09s      |
+| frontend             | 4m 33s              | 9m 16s     | +4m 43s      |
 
 **Key Observations:**
 - **Modest clean build improvement**: 6.2% faster (56 seconds saved)
@@ -215,15 +215,17 @@ RUN chown dist
 
 **This architectural decision is the PRIMARY REASON for slower incremental builds.**
 
+**See later changes description at the end of this file - Update After Phase 0.4 — Dockerfile.nx-services Production Stage Fix (July 1, 2026)**
+
 **Docker Build Performance Analysis:**
 
 **Build Performance Comparison (All Scenarios Measured):**
 
-| Scenario | Before (Workspaces) | After (Nx) | Winner |
-|----------|---------------------|------------|--------|
-| **Clean build** (first time) | 15m 7s (907s) | 14m 11s (851s) | **Nx** (-6.2%, saves 56s) |
-| **Cached build** (no changes) | 55.9s | 1m 3s (63.7s) | **Workspaces** (Nx is 14% slower, +7.8s) |
-| **Single service change** | 1m 2.9s (62.9s) | 1m 18s (78s) | **Workspaces** (Nx is 24% slower, +15s) |
+| Scenario                      | Before (Workspaces) | After (Nx)     | Winner                                   |
+|-------------------------------|---------------------|----------------|------------------------------------------|
+| **Clean build** (first time)  | 15m 7s (907s)       | 14m 11s (851s) | **Nx** (-6.2%, saves 56s)                |
+| **Cached build** (no changes) | 55.9s               | 1m 3s (63.7s)  | **Workspaces** (Nx is 14% slower, +7.8s) |
+| **Single service change**     | 1m 2.9s (62.9s)     | 1m 18s (78s)   | **Workspaces** (Nx is 24% slower, +15s)  |
 
 **Individual Service Build Times (Docker Desktop):**
 
@@ -234,15 +236,15 @@ RUN chown dist
 
 *Single Service Change (auth-service modified):*
 
-| Service | Before (Workspaces) | After (Nx) | Difference |
-|---------|---------------------|------------|------------|
-| auth-service (changed) | 11.1s | 20.8s | Nx is 87% slower |
-| suggestion-service | 3.3s | 5.0s | Nx is 52% slower |
-| history-service | 3.4s | 5.0s | Nx is 47% slower |
-| favorite-service | 3.3s | 5.0s | Nx is 52% slower |
-| api-gateway | 3.2s | 4.9s | Nx is 53% slower |
-| frontend | 3.3s | 5.0s | Nx is 52% slower |
-| **Total** | **1m 2.9s** | **1m 18s** | **Nx is 24% slower** |
+| Service                | Before (Workspaces) | After (Nx) | Difference           |
+|------------------------|---------------------|------------|----------------------|
+| auth-service (changed) | 11.1s               | 20.8s      | Nx is 87% slower     |
+| suggestion-service     | 3.3s                | 5.0s       | Nx is 52% slower     |
+| history-service        | 3.4s                | 5.0s       | Nx is 47% slower     |
+| favorite-service       | 3.3s                | 5.0s       | Nx is 52% slower     |
+| api-gateway            | 3.2s                | 4.9s       | Nx is 53% slower     |
+| frontend               | 3.3s                | 5.0s       | Nx is 52% slower     |
+| **Total**              | **1m 2.9s**         | **1m 18s** | **Nx is 24% slower** |
 
 **Key Insight:** Old workspace version has **better Docker build performance** for incremental builds. Changed service rebuilds faster (11.1s vs 20.8s), cached services faster (3.2s vs 5.0s).
 
@@ -961,3 +963,45 @@ Phase 0.1 successfully migrated the project to an Nx monorepo structure. While t
 **Report Generated**: June 25, 2026
 **Phase Status**: ✅ COMPLETE
 **Next Phase**: Phase 0.2 - Infrastructure Folder Restructure (pending approval)
+
+---
+
+## Update After Phase 0.4 — Dockerfile.nx-services Production Stage Fix (July 1, 2026)
+
+### What Changed
+
+The `infrastructure/Dockerfile.nx-services` production stage was modified. The original design (documented in Step 4 above) ran `npm ci --omit=dev` in the production stage to install only production dependencies:
+
+```dockerfile
+# Stage 2: Production — original
+FROM node:24-alpine AS production
+COPY package*.json ./
+RUN npm config set fetch-timeout 600000 && npm ci --omit=dev  # downloads from npm registry
+COPY --from=builder /app/dist/apps/${SERVICE_NAME} ./dist
+```
+
+### Why It Broke
+
+After the Phase 0.2 package updates (`67ba9fd` commit), `package.json` and `package-lock.json` changed. This invalidated the Docker layer cache for `COPY package*.json ./` in the production stage. Once cache-busted, `npm ci --omit=dev` attempted to download packages from `registry.npmjs.org` and failed with `ETIMEDOUT` — the Docker daemon cannot reach the public npm registry on this network.
+
+There was also a secondary structural issue: if the production stage copies all of `node_modules` and then prunes, Docker's additive layer model means deleted devDep files remain stored in the image, making the final image larger than intended.
+
+### Fix
+
+`npm prune --omit=dev` was moved to the **builder stage** (after the Nx build, before the production stage copies anything). The production stage then receives a single already-pruned `node_modules`:
+
+```dockerfile
+# Stage 1: Builder — after build
+RUN npx nx build ${SERVICE_NAME} --prod
+RUN npm prune --omit=dev          # prune in-place; build is complete, no network needed
+
+# Stage 2: Production — updated
+FROM node:24-alpine AS production
+COPY package*.json ./
+COPY --from=builder /app/node_modules ./node_modules    # single clean layer, prod deps only
+COPY --from=builder /app/dist/apps/${SERVICE_NAME} ./dist
+```
+
+`npm prune --omit=dev` deletes files from an existing `node_modules` — no registry access required. The production image still excludes all devDependencies; the mechanism changed, not the outcome.
+
+Full diagnosis and fix documented in `PHASE-0.4-COMPLETION-REPORT.md`.

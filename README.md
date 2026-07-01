@@ -185,7 +185,6 @@ suggestify-microservices/
 │   │
 │   ├── scripts/                                 # Utility scripts
 │   │   ├── health-check.sh                      # Health check automation
-│   │   ├── remove-duplicate-rxjs.js             # Dependency cleanup
 │   │   └── stop-and-reset.js                    # Docker cleanup script
 │   │
 │   ├── services/                                # All services follow NestJS structure
