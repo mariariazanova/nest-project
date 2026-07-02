@@ -13,7 +13,8 @@
     "affected:build": "nx affected --target=build",
     "affected:test": "nx affected --target=test",
     "affected:lint": "nx affected --target=lint",
-    "graph": "nx graph"
+    "graph": "nx graph",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "~22.0.4",
@@ -44,8 +45,10 @@
     "angular-eslint": "^22.0.0",
     "eslint": "^10.5.0",
     "eslint-plugin-playwright": "^2.10.4",
+    "husky": "^9.1.7",
     "jest": "^30.4.2",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.8",
     "nx": "23.1.0-beta.4",
     "prettier": "~3.6.2",
     "ts-jest": "^29.4.11",
@@ -56,6 +59,15 @@
     "vitest": "^4.0.8",
     "webpack": "^5.108.2",
     "webpack-cli": "^7.0.3"
+  },
+  "lint-staged": {
+    "*.{ts,js,html}": [
+      "eslint --fix --no-error-on-unmatched-pattern",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "nx": {},
   "dependencies": {
