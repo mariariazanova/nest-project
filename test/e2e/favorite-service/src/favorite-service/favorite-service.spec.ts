@@ -1,10 +1,14 @@
-import axios from 'axios';
+// BE e2e tests are placeholder stubs — commented out until Phase 4 (Testing Infrastructure).
+// They expect GET /api → { message: 'Hello API' } which does not match the actual service API.
+// Will be rewritten with real Playwright/Supertest scenarios in Phase 4.
 
-describe('GET /api', () => {
-  it('should return a message', async () => {
-    const res = await axios.get(`/api`);
+// import axios from 'axios';
 
-    expect(res.status).toBe(200);
-    expect(res.data).toEqual({ message: 'Hello API' });
-  });
-})
+// describe('GET /api', () => {
+//   it('should return a message', async () => {
+//     const res = await axios.get(`/api`);
+
+//     expect(res.status).toBe(200);
+//     expect(res.data).toEqual({ message: 'Hello API' });
+//   });
+// })

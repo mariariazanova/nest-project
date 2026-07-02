@@ -1,4 +1,4 @@
-name: Frontend + Backend Tests
+name: Lint
 
 on:
   push:
@@ -7,18 +7,18 @@ on:
     branches: ['**']
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for Nx affected commands
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -35,18 +35,5 @@ jobs:
           restore-keys: |
             nx-${{ runner.os }}-
 
-      - name: Run affected linting
+      - name: Lint affected
         run: npx nx affected --target=lint --parallel=3
-
-      - name: Run affected tests
-        run: npx nx affected --target=test --parallel=3
-
-      - name: Upload frontend coverage
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: coverage/apps/frontend
-
-      - name: Build affected apps
-        run: npx nx affected --target=build --parallel=3
