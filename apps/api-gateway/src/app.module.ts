@@ -6,7 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 // Modules
 import { ProxyModule } from './proxy/proxy.module';
-import { HealthModule } from './health/health.module';
+import { HealthModule } from '@suggestify/backend/health';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { MetricsModule } from '@suggestify/backend/metrics';
