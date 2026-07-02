@@ -237,5 +237,21 @@ All 5 BE e2e spec files have been commented out (Nx scaffolding stubs, wrong API
 
 ---
 
-**Estimate**: 90 min core (step 1–6) + buffer for CI/environment issues → 0.5 day (1 developer)
+## Timeline Summary
+
+| Step      | Description                             | Estimate        |
+| --------- | --------------------------------------- | --------------- |
+| 1         | Install husky + lint-staged             | 5 min           |
+| 2         | Initialise Husky                        | 5 min           |
+| 3         | Configure lint-staged                   | 15 min          |
+| 4         | Update pre-commit hook                  | 5 min           |
+| 5         | Split GitHub Actions into two workflows | 30 min          |
+| 6         | Verify (hook fires, CI passes)          | 30 min          |
+| **Total** |                                         | **90 min core** |
+
+Buffer for CI/environment issues → **0.5 day**
+
+---
+
+**Phase 0.6 Status**: Ready to implement
 **Next Phase**: Phase 1.1 — Database Migrations

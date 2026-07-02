@@ -28,7 +28,7 @@ All verification items from the original checklist are now complete, including t
 ### Step 2: Upgrade Angular to 22 ✅
 
 | Package                 | Before     | After     |
-|-------------------------|------------|-----------|
+| ----------------------- | ---------- | --------- |
 | `@angular/core`         | `~18.2.14` | `~22.0.4` |
 | `@angular/common`       | `~18.2.14` | `~22.0.4` |
 | `@angular/forms`        | `~18.2.14` | `~22.0.4` |
@@ -37,6 +37,7 @@ All verification items from the original checklist are now complete, including t
 | `@angular/compiler-cli` | `~18.2.14` | `~22.0.4` |
 
 **Breaking changes fixed:**
+
 - `@angular-eslint/prefer-control-flow`: All `*ngIf` / `*ngFor` replaced with `@if` / `@for` in 7 templates (favorites, header, login, main-page, recommendations, recommendations-history, smart-picks)
 - `@angular-eslint/prefer-inject`: Constructor injection converted to `inject()` in 9 files (all affected components + `auth.interceptor.ts`, `hateoas.interceptor.ts`)
 - `@angular-eslint/no-output-native`: `@Output() cancel` renamed to `@Output() loginCancel` in `LoginComponent`; updated in HTML template, spec file, and parent `header.component.html`
@@ -61,7 +62,7 @@ All verification items from the original checklist are now complete, including t
 Initial target was v10 (per plan). Corrected to v11 in a follow-up step — the pre-migration codebase was already on v11 and the downgrade was unintentional.
 
 | Package                    | Before    | After                              |
-|----------------------------|-----------|------------------------------------|
+| -------------------------- | --------- | ---------------------------------- |
 | `@nestjs/core`             | `^10.0.0` | `^11.1.27`                         |
 | `@nestjs/common`           | `^10.0.0` | `^11.1.27`                         |
 | `@nestjs/platform-express` | `^10.0.0` | `^11.1.27`                         |
@@ -119,7 +120,7 @@ Spec files updated: `login.component.spec.ts` — `component.cancel` → `compon
 All 5 backend services build successfully:
 
 | Service            | Build Status | Dist Size |
-|--------------------|--------------|-----------|
+| ------------------ | ------------ | --------- |
 | api-gateway        | ✅ PASS      | ~128 KB   |
 | auth-service       | ✅ PASS      | ~288 KB   |
 | suggestion-service | ✅ PASS      | ~608 KB   |
@@ -128,8 +129,8 @@ All 5 backend services build successfully:
 
 Backend unit test results:
 
-| Service            | Tests   | Status     |
-|--------------------|---------|------------|
+| Service            | Tests   | Status      |
+| ------------------ | ------- | ----------- |
 | api-gateway        | 41      | ✅ PASS     |
 | auth-service       | 85      | ✅ PASS     |
 | suggestion-service | 98      | ✅ PASS     |
@@ -152,7 +153,7 @@ Backend unit test results:
 ### Step 13: Final Verification ✅
 
 | Check                      | Status | Notes                                                                            |
-|----------------------------|--------|----------------------------------------------------------------------------------|
+| -------------------------- | ------ | -------------------------------------------------------------------------------- |
 | Build all apps             | ✅     | `nx run-many -t build --all` passes                                              |
 | Lint all apps              | ✅     | 6/6 projects pass ESLint flat config                                             |
 | All backend tests          | ✅     | 374 tests, 5 services                                                            |
@@ -175,13 +176,14 @@ These upgrades were executed as a second pass after the initial plan completed. 
 #### TypeORM 0.3.30 → 1.0.0
 
 |                 |                                                                                                       |
-|-----------------|-------------------------------------------------------------------------------------------------------|
+| --------------- | ----------------------------------------------------------------------------------------------------- |
 | Package         | `typeorm`: `^0.3.30` → `^1.0.0`                                                                       |
 | Breaking change | `relations` option in `find*` queries changed: string array format removed — must use object notation |
 
 **Code changes:**
 
 `apps/suggestion-service/src/suggestion/suggestion.service.ts`
+
 ```typescript
 // Before
 relations: ['moods', 'genres', 'events'],
@@ -196,13 +198,14 @@ No other files used string-array `relations` syntax.
 #### Mongoose 8.24.1 → 9.7.3
 
 |                 |                                                                                                       |
-|-----------------|-------------------------------------------------------------------------------------------------------|
+| --------------- | ----------------------------------------------------------------------------------------------------- |
 | Package         | `mongoose`: `^8.24.1` → `^9.7.3`                                                                      |
 | Breaking change | Mongoose 9 bundles MongoDB driver v7 which removed `useNewUrlParser` and `useUnifiedTopology` options |
 
 **Code change:**
 
 `apps/history-service/src/app.module.ts`
+
 ```typescript
 // Before
 useFactory: (config: ConfigService) => ({
@@ -219,7 +222,7 @@ useFactory: (config: ConfigService) => ({
 #### Batch Upgrades: bcrypt, cache-manager, cache-manager-redis-yet, helmet, opossum, consul, @types/express, @types/bcrypt
 
 | Package                   | Before     | After     | Notes                                                                                                        |
-|---------------------------|------------|-----------|--------------------------------------------------------------------------------------------------------------|
+| ------------------------- | ---------- | --------- | ------------------------------------------------------------------------------------------------------------ |
 | `bcrypt`                  | `^5.1.1`   | `^6.0.0`  | No API changes; internal algorithm improvements                                                              |
 | `cache-manager`           | `^5.7.6`   | `^7.2.9`  | v6 and v7 both had breaking changes — Keyv-based, TTL now in **milliseconds**                                |
 | `cache-manager-redis-yet` | `^4.2.0`   | removed   | Incompatible with `cache-manager` v7 at both type and runtime level; replaced by `@keyv/redis` (see Step 16) |
@@ -234,7 +237,7 @@ useFactory: (config: ConfigService) => ({
 `ttl` in the store-level `CacheModule.registerAsync` options changed from **seconds** (v4/v5) to **milliseconds** (v7):
 
 | Service            | Old `ttl` | New `ttl`   |
-|--------------------|-----------|-------------|
+| ------------------ | --------- | ----------- |
 | auth-service       | `3600`    | `3_600_000` |
 | api-gateway        | `300`     | `300_000`   |
 | suggestion-service | `3600`    | `3_600_000` |
@@ -279,7 +282,7 @@ this.consul = new Consul({
 ### Step 15: Jest 29 → 30 Upgrade ✅
 
 | Package       | Before     | After      | Notes                                                   |
-|---------------|------------|------------|---------------------------------------------------------|
+| ------------- | ---------- | ---------- | ------------------------------------------------------- |
 | `jest`        | `^29.7.0`  | `^30.4.2`  | New config format; removed deprecated matcher aliases   |
 | `@types/jest` | `^29.5.14` | `^30.0.0`  | `jest.SpyInstance` type removed                         |
 | `ts-jest`     | `^29.1.0`  | `^29.4.11` | Jest 30 support added in 29.4.0; stays in the 29.x line |
@@ -289,6 +292,7 @@ this.consul = new Consul({
 **Code change:**
 
 `apps/api-gateway/src/middleware/logging.middleware.spec.ts`
+
 ```typescript
 // Before — jest.SpyInstance removed in Jest 30
 let loggerSpy: jest.SpyInstance;
@@ -308,7 +312,7 @@ Three TypeScript errors surfaced from IDE inspection after Step 15 was closed.
 #### `cache-manager-redis-yet` → `@keyv/redis` (all 5 `app.module.ts`)
 
 | Package                   | Before   | After    |
-|---------------------------|----------|----------|
+| ------------------------- | -------- | -------- |
 | `cache-manager-redis-yet` | `^5.1.5` | removed  |
 | `@keyv/redis`             | —        | `^5.1.6` |
 
@@ -332,17 +336,17 @@ ttl: 3_600_000,
 #### `opossum` missing types + `breaker.fire()` return type (all 5 circuit-breaker services)
 
 | Package          | Before | After             |
-|------------------|--------|-------------------|
+| ---------------- | ------ | ----------------- |
 | `@types/opossum` | —      | `^8.1.9` (devDep) |
 
 `opossum` v10 ships no bundled types. `@types/opossum` v8 types `breaker.fire()` as `Promise<unknown>`. Cast added to align with the generic return type `T`:
 
 ```typescript
 // Before
-return await breaker.fire(...args);  // TS2322: unknown not assignable to T
+return await breaker.fire(...args); // TS2322: unknown not assignable to T
 
 // After
-return await breaker.fire(...args) as T;
+return (await breaker.fire(...args)) as T;
 ```
 
 ---
@@ -350,6 +354,7 @@ return await breaker.fire(...args) as T;
 ## Verification Checklist vs Plan
 
 ### Package Versions
+
 - ✅ Angular packages are 22.0.4
 - ✅ TypeScript is 6.0.x (`6.0.3`)
 - ✅ Vitest is 4.0.8 (`^4.0.8` → installed `4.1.9`)
@@ -357,6 +362,7 @@ return await breaker.fire(...args) as T;
 - ✅ No `.npmrc` legacy-peer-deps flag (clean install without it)
 
 ### Frontend
+
 - ✅ Frontend builds successfully
 - ✅ Frontend tests pass (78 tests)
 - ✅ Frontend serves without errors (`nx serve frontend` → HTTP 200)
@@ -364,6 +370,7 @@ return await breaker.fire(...args) as T;
 - ✅ Vitest native support works (no `@analogjs` workarounds)
 
 ### Backend Services
+
 - ✅ All 5 services build successfully
 - ✅ All backend tests pass (374 tests)
 - ✅ Services start individually (verified via Docker — all 4 app services pass `/health`)
@@ -371,6 +378,7 @@ return await breaker.fire(...args) as T;
 - ✅ Health endpoints respond — `{"status":"ok"}` from all 5 services
 
 ### Testing
+
 - ✅ Vitest runs with native Angular 22 support
 - ✅ All frontend tests pass
 - ✅ All backend Jest tests pass
@@ -378,12 +386,14 @@ return await breaker.fire(...args) as T;
 - ✅ No test-related errors
 
 ### Dependencies
+
 - ✅ No missing peer dependencies
 - ✅ `npm install` runs without errors
 - ✅ `npm audit` vulnerabilities reduced: 78 → 18 (3 low, 9 moderate, 6 high, 0 critical) — trajectory: 78 → 27 (post-Angular/NestJS) → 20 (post-NestJS v11) → 18 (post-batch upgrades)
 - ⚠️ `@nx/jest:jest` executor is deprecated (Nx 23 deprecation warning) — migration to inferred targets deferred to future phase
 
 ### CI/CD
+
 - ✅ GitHub Actions workflow reviewed: `npm ci`, `nx-set-shas`, `nx affected lint/test/build`, coverage artifact path matches `coverage/apps/frontend`
 - ⚠️ All CI checks pass in actual GitHub Actions — **not run; verified locally**
 - ✅ No new workflow errors (file reviewed and confirmed correct)
@@ -393,6 +403,7 @@ return await breaker.fire(...args) as T;
 ## Issues Encountered & Root Cause Analysis
 
 ### Issue 1: Backend Services Had No Test Targets
+
 **Severity**: High
 **Category**: Migration gap from Phase 0.1
 
@@ -405,6 +416,7 @@ return await breaker.fire(...args) as T;
 ---
 
 ### Issue 2: `api-gateway` ESLint — Legacy `.eslintrc.js` Conflicts
+
 **Severity**: Medium
 
 **Problem**: `api-gateway` was the only service still using `.eslintrc.js` (legacy format) while the rest of the workspace had migrated to flat config. `nx lint api-gateway` failed because `jest.config.ts` and `webpack.config.js` were not listed in the tsconfig project.
@@ -414,6 +426,7 @@ return await breaker.fire(...args) as T;
 ---
 
 ### Issue 3: `frontend-e2e:lint` — Missing Packages
+
 **Severity**: Medium
 
 **Problem 1**: `Cannot find package 'eslint-plugin-playwright'` — the e2e ESLint config referenced it but it was not installed.
@@ -424,10 +437,12 @@ return await breaker.fire(...args) as T;
 ---
 
 ### Issue 4: `frontend:lint` — 46 Angular-ESLint Violations
+
 **Severity**: Medium
 **Category**: Angular 22 style rules enforced by `angular-eslint`
 
 **Problem**: After installing `angular-eslint`, the linter flagged 46 violations across 9 files:
+
 - `prefer-control-flow`: `*ngIf`/`*ngFor` used instead of `@if`/`@for`
 - `prefer-inject`: Constructor injection instead of `inject()` function
 - `no-output-native`: `@Output() cancel` clashes with native DOM event
@@ -439,6 +454,7 @@ return await breaker.fire(...args) as T;
 ---
 
 ### Issue 5: Frontend Coverage Output Path Mismatch
+
 **Severity**: Low
 
 **Problem**: Vitest coverage outputted to `coverage/frontend/` by default, but the CI workflow artifact upload step referenced `coverage/apps/frontend/` (matching the backend pattern).
@@ -448,6 +464,7 @@ return await breaker.fire(...args) as T;
 ---
 
 ### Issue 6: `vite-tsconfig-paths` Installed but Unused
+
 **Severity**: Low
 
 **Problem**: Package was listed in dependencies and imported in the (now-deleted) `vite.config.mts`. After removing workarounds, the frontend `tsconfig.json` had no `paths` aliases — the package did nothing.
@@ -459,7 +476,7 @@ return await breaker.fire(...args) as T;
 ## npm Vulnerabilities
 
 |           | Before Phase 0.2 | After Steps 1–13 | After All Upgrades (Steps 14–15) |
-|-----------|------------------|------------------|----------------------------------|
+| --------- | ---------------- | ---------------- | -------------------------------- |
 | Critical  | 2                | 0                | 0                                |
 | High      | 27               | 12               | 6                                |
 | Moderate  | 46               | 12               | 9                                |
@@ -473,15 +490,18 @@ Remaining 18 vulnerabilities are in transitive dev dependencies (`webpack-dev-se
 ## Coverage Results
 
 ### Frontend (Vitest 4)
+
 ```
 Statements   : 73.63% ( 525/713 )
 Branches     : 77.97% ( 223/286 )
 Functions    : 71.31% ( 92/129 )
 Lines        : 79.67% ( 443/556 )
 ```
+
 Output: `coverage/apps/frontend/`
 
 ### Backend (Jest / ts-jest)
+
 Coverage collected for all 5 services in `coverage/apps/<service>/`. Exact per-service percentages not captured in this report; all 374 tests pass.
 
 ---
@@ -489,7 +509,7 @@ Coverage collected for all 5 services in `coverage/apps/<service>/`. Exact per-s
 ## Plan vs Actual Comparison
 
 | Step                                     | Plan      | Actual | Notes                                                                                                         |
-|------------------------------------------|-----------|--------|---------------------------------------------------------------------------------------------------------------|
+| ---------------------------------------- | --------- | ------ | ------------------------------------------------------------------------------------------------------------- |
 | Step 1: Remove workarounds               | 15 min    | ✅     | Completed                                                                                                     |
 | Step 2: Upgrade Angular                  | 1–2 hours | ✅     | Angular-eslint fixes took additional time                                                                     |
 | Step 3: Upgrade TypeScript               | 15 min    | ✅     | Completed                                                                                                     |
@@ -508,6 +528,7 @@ Coverage collected for all 5 services in `coverage/apps/<service>/`. Exact per-s
 | Step 16: Post-phase type fixes           | unplanned | ✅     | `cache-manager-redis-yet` → `@keyv/redis`; TypeORM `parseInt(port)`; `@types/opossum` + `breaker.fire() as T` |
 
 **Unplanned work** (not in original plan):
+
 - Backend test infrastructure setup (jest.config.ts × 5, tsconfig.spec.json × 5, project.json targets × 5)
 - ESLint flat config migration for api-gateway
 - Angular-eslint code modernization (46 violations across 9 files)
@@ -544,31 +565,38 @@ The original plan assumed the developer has Docker running for the browser smoke
 ## Benefits Achieved
 
 ### 1. Clean Modern Stack
+
 - Angular 22 with native built-in control flow (`@if`/`@for`)
 - TypeScript 6 with improved type checking
 - Vitest 4 native integration — no `@analogjs` shims
 - ESLint flat config across all 6 projects
 
 ### 2. Full Test Coverage Infrastructure
+
 All 6 projects now have working test targets:
+
 ```bash
 npm exec -- nx run-many -t test --all
 # 374 backend (Jest) + 78 frontend (Vitest) = 452 tests total
 ```
 
 ### 3. Coverage Reports
+
 ```bash
 npm exec -- nx run frontend:test --coverage     # → coverage/apps/frontend/
 npm exec -- nx run auth-service:test -- --coverage # → coverage/apps/auth-service/
 ```
 
 ### 4. Zero ESLint Errors
+
 All 6 projects pass `nx lint` cleanly. Angular code is fully modernized:
+
 - Built-in control flow everywhere
 - `inject()` function (not constructor injection)
 - No native-event-conflicting outputs
 
 ### 5. Reduced Vulnerabilities
+
 78 → 18 total (`-60`); 0 critical (was 2).
 
 ---
@@ -577,8 +605,8 @@ All 6 projects pass `nx lint` cleanly. Angular code is fully modernized:
 
 All four items that required a running infrastructure were verified in a follow-up session (June 29, 2026):
 
-| Item                                     | Result                                                      |
-|------------------------------------------|-------------------------------------------------------------|
+| Item                                     | Result                                                       |
+| ---------------------------------------- | ------------------------------------------------------------ |
 | `nx serve frontend` + browser check      | ✅ HTTP 200, compiles clean, one pre-existing NG8107 warning |
 | Individual backend service health        | ✅ All 4 app services pass `/health` inside Docker           |
 | Docker compose up (cold boot, `--build`) | ✅ All 15 containers running and healthy                     |
@@ -600,6 +628,7 @@ Two issues were found and fixed in `backend/infrastructure/docker-compose.yml`:
 ## Files Modified
 
 ### New Files Created
+
 - `apps/api-gateway/jest.config.ts`
 - `apps/api-gateway/tsconfig.spec.json`
 - `apps/auth-service/jest.config.ts`
@@ -615,6 +644,7 @@ Two issues were found and fixed in `backend/infrastructure/docker-compose.yml`:
 - `PHASE-0.2-COMPLETION-REPORT.md` (this file)
 
 ### Modified Files
+
 - `package.json` + `package-lock.json` — all package version changes
 - `apps/frontend/vitest-base.config.ts` — removed vite-tsconfig-paths, set coverage directory
 - `apps/frontend/project.json` — changed test executor, added outputs
@@ -650,6 +680,7 @@ Two issues were found and fixed in `backend/infrastructure/docker-compose.yml`:
 - `backend/infrastructure/docker-compose.yml` — removed `version: '3.9'`; healthcheck `start_period`/`retries` tuning; frontend `depends_on` condition fix
 
 **Additional files — Steps 14–15:**
+
 - `apps/api-gateway/src/infrastructure/consul/consul.service.ts` — consul v2: default import, `parseInt(port)`, removed `promisify`
 - `apps/auth-service/src/infrastructure/consul/consul.service.ts` — same
 - `apps/suggestion-service/src/infrastructure/consul/consul.service.ts` — same
@@ -665,6 +696,7 @@ Two issues were found and fixed in `backend/infrastructure/docker-compose.yml`:
 - `apps/api-gateway/src/middleware/logging.middleware.spec.ts` — `jest.SpyInstance` → `jest.Spied<typeof Logger.prototype.log>`
 
 **Additional files — Step 16 (post-phase type fixes):**
+
 - `apps/api-gateway/src/app.module.ts` — `cache-manager-redis-yet` → `@keyv/redis`; `store:` → `stores: [new KeyvRedis(url)]`
 - `apps/auth-service/src/app.module.ts` — same Redis migration; TypeORM `port: parseInt(...)`, explicit `TypeOrmModuleOptions` return type
 - `apps/suggestion-service/src/app.module.ts` — same Redis migration; TypeORM `port: parseInt(...)`, explicit return type
@@ -677,6 +709,7 @@ Two issues were found and fixed in `backend/infrastructure/docker-compose.yml`:
 - `apps/favorite-service/src/infrastructure/circuit-breaker/circuit-breaker.service.ts` — same
 
 ### Deleted Files
+
 - `apps/api-gateway/.eslintrc.js` — replaced by `eslint.config.mjs`
 - `migrations.json` — Nx migration artifact, cleaned up
 
@@ -684,4 +717,4 @@ Two issues were found and fixed in `backend/infrastructure/docker-compose.yml`:
 
 **Report Generated**: June 29, 2026 (updated June 30, 2026 — Step 16)
 **Phase Status**: ✅ COMPLETE — all 13 original checklist items + Steps 14–16 (ecosystem upgrades + post-phase type fixes) + 4 infrastructure checks verified
-**Next Phase**: Phase 0.3 — Rewrite Backend E2E Tests
+**Next Phase**: Phase 0.3 — Restructure Infrastructure Folder

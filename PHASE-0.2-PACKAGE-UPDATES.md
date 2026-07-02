@@ -7,6 +7,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 ## Scope - Phase 0.2 Only
 
 ✅ **In Scope:**
+
 - Upgrade Angular from 18.2.14 to 22.0.4
 - Upgrade TypeScript from 5.4.x to 6.0.x
 - Upgrade Vite from 5.x to 6.x (bundled with Angular 22)
@@ -18,6 +19,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 - Verify all builds and tests
 
 ❌ **Out of Scope (Future Phases):**
+
 - NO shared library extraction (Phase 0.5)
 - NO infrastructure refactoring (Phase 0.3-0.4)
 - NO new features or code improvements
@@ -25,6 +27,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 ## Why This Matters
 
 ### Current State
+
 - Angular 18 with Vite 5 (no native Vitest support)
 - TypeScript 5.4.x (older type checking)
 - Using `@analogjs/vite-plugin-angular` workarounds for Vitest
@@ -32,6 +35,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 - Test setup is fragile and incomplete
 
 ### Target State
+
 - Angular 22 with Vite 6 (native Vitest 4 support)
 - TypeScript 6.0.x (improved type checking)
 - Native Angular 22 testing tools (no workarounds needed)
@@ -39,6 +43,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 - Modern tooling compatibility
 
 ### Benefits
+
 - **Native Vitest Support**: Angular 22 has built-in Vitest integration
 - **Better Type Safety**: TypeScript 6 improvements
 - **Security Patches**: Fix vulnerabilities
@@ -56,6 +61,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 ## Target Package Versions
 
 ### Frontend Dependencies
+
 ```json
 {
   "@angular/animations": "~22.0.4",
@@ -70,6 +76,7 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 ```
 
 ### Frontend Dev Dependencies
+
 ```json
 {
   "@angular-devkit/build-angular": "~22.0.4",
@@ -113,11 +120,13 @@ Upgrade all major dependencies including Angular 18→22, TypeScript 5→6, and 
 Since Angular 22 has native Vitest support, we need to clean up our workarounds first.
 
 1. **Remove custom Vitest packages:**
+
    ```bash
    npm uninstall @analogjs/vite-plugin-angular @analogjs/vitest-angular vite-tsconfig-paths
    ```
 
 2. **Delete custom vite config:**
+
    ```bash
    rm apps/frontend/vite.config.mts
    ```
@@ -130,18 +139,20 @@ Since Angular 22 has native Vitest support, we need to clean up our workarounds 
 ### Step 2: Upgrade Angular to 22 (1-2 hours)
 
 1. **Update Angular CLI globally (optional):**
+
    ```bash
    npm install -g @angular/cli@22
    ```
 
 2. **Use ng update for automated migration:**
+
    ```bash
    cd apps/frontend
    npx ng update @angular/core@22 @angular/cli@22 --allow-dirty --force
    ```
 
    This command:
-   - Updates all @angular/* packages to v22
+   - Updates all @angular/\* packages to v22
    - Runs migration schematics
    - Updates configurations automatically
    - May prompt for breaking changes
@@ -149,6 +160,7 @@ Since Angular 22 has native Vitest support, we need to clean up our workarounds 
 3. **If ng update fails, manual update:**
 
    Edit root `package.json`:
+
    ```json
    {
      "dependencies": {
@@ -181,6 +193,7 @@ Since Angular 22 has native Vitest support, we need to clean up our workarounds 
 Angular 22 requires TypeScript 6.
 
 1. **Update TypeScript version:**
+
    ```json
    {
      "devDependencies": {
@@ -199,6 +212,7 @@ Angular 22 requires TypeScript 6.
 Angular 22 has built-in Vitest support through `@angular/build`.
 
 1. **Install Vitest 4:**
+
    ```json
    {
      "devDependencies": {
@@ -210,6 +224,7 @@ Angular 22 has built-in Vitest support through `@angular/build`.
    ```
 
 2. **Update frontend project.json test target:**
+
    ```json
    {
      "test": {
@@ -222,6 +237,7 @@ Angular 22 has built-in Vitest support through `@angular/build`.
    ```
 
 3. **Create Angular 22 compatible vitest.config.ts:**
+
    ```typescript
    // apps/frontend/vitest.config.ts
    import { defineConfig } from 'vitest/config';
@@ -236,13 +252,14 @@ Angular 22 has built-in Vitest support through `@angular/build`.
        include: ['src/**/*.{test,spec}.ts'],
        coverage: {
          provider: 'v8',
-         reporter: ['text', 'json', 'html']
-       }
-     }
+         reporter: ['text', 'json', 'html'],
+       },
+     },
    });
    ```
 
 4. **Create test-setup.ts:**
+
    ```typescript
    // apps/frontend/src/test-setup.ts
    import 'zone.js';
@@ -262,11 +279,12 @@ Angular 22 has built-in Vitest support through `@angular/build`.
 ### Step 5: Update NestJS Packages (30 min)
 
 1. **Check latest NestJS versions:**
+
    ```bash
    npm view @nestjs/core version
    ```
 
-2. **Update all @nestjs/* packages (target: v11):**
+2. **Update all @nestjs/\* packages (target: v11):**
    ```json
    {
      "dependencies": {
@@ -293,11 +311,13 @@ Angular 22 has built-in Vitest support through `@angular/build`.
 ### Step 6: Update Other Dependencies (30 min)
 
 1. **Update Nx packages:**
+
    ```bash
    npm install --save-dev nx@latest @nx/nest@latest @nx/angular@latest @nx/webpack@latest @nx/jest@latest @nx/eslint@latest
    ```
 
 2. **Update other critical dependencies:**
+
    ```json
    {
      "dependencies": {
@@ -320,11 +340,13 @@ Angular 22 has built-in Vitest support through `@angular/build`.
 ### Step 7: Clean Install (15 min)
 
 1. **Install all dependencies:**
+
    ```bash
    npm install
    ```
 
 2. **If peer dependency errors occur:**
+
    ```bash
    # Try to resolve automatically
    npm install --legacy-peer-deps
@@ -344,6 +366,7 @@ This is the most time-consuming step. Common issues:
 #### TypeScript 6 Breaking Changes
 
 1. **Stricter null checks:**
+
    ```typescript
    // Old (TS 5)
    const value = possiblyNull.property;
@@ -363,6 +386,7 @@ This is the most time-consuming step. Common issues:
 #### Angular 22 Breaking Changes
 
 1. **Input/Output syntax:**
+
    ```typescript
    // Old
    @Input() name: string;
@@ -394,6 +418,7 @@ This is the most time-consuming step. Common issues:
    - Already done in previous work: `.toBeTrue()` → `.toBe(true)`
 
 2. **Fix import paths:**
+
    ```typescript
    // Ensure imports work with new structure
    import { TestBed } from '@angular/core/testing';
@@ -404,6 +429,7 @@ This is the most time-consuming step. Common issues:
    - Check test/mocks/ folder
 
 4. **Run tests:**
+
    ```bash
    npx nx test frontend
    ```
@@ -416,6 +442,7 @@ This is the most time-consuming step. Common issues:
 ### Step 10: Verify Backend Builds (30 min)
 
 1. **Build each service:**
+
    ```bash
    npx nx build api-gateway
    npx nx build auth-service
@@ -437,6 +464,7 @@ This is the most time-consuming step. Common issues:
 ### Step 11: Verify Frontend Build (30 min)
 
 1. **Build frontend:**
+
    ```bash
    npx nx build frontend
    ```
@@ -447,6 +475,7 @@ This is the most time-consuming step. Common issues:
    - Asset loading issues
 
 3. **Serve and test locally:**
+
    ```bash
    npx nx serve frontend
    ```
@@ -460,25 +489,30 @@ This is the most time-consuming step. Common issues:
 ### Step 12: Update Documentation (15 min)
 
 1. **Update README.md:**
-   ```markdown
+
+   ````markdown
    ## Tech Stack
 
    ### Frontend
+
    - Angular 22.0.4
    - TypeScript 6.0.x
    - Vitest 4.0.8 (native support)
    - RxJS 7.8.x
 
    ### Backend
+
    - NestJS 10.4.x
    - TypeScript 6.0.x
    - Node.js 20.x
 
    ### Testing
+
    - Vitest (frontend)
    - Jest (backend)
 
    ## Test Commands
+
    ```bash
    # Frontend tests with Vitest
    npm exec nx test frontend
@@ -489,6 +523,7 @@ This is the most time-consuming step. Common issues:
    # All tests
    npm exec nx run-many --target=test --all
    ```
+   ````
 
 2. **Update nx.json if needed:**
    - Remove Angular 18 specific configurations
@@ -496,42 +531,50 @@ This is the most time-consuming step. Common issues:
 
 3. **Document breaking changes:**
    Create MIGRATION-NOTES.md:
+
    ```markdown
    # Phase 0.2 Migration Notes
 
    ## Upgraded Packages
+
    - Angular: 18.2.14 → 22.0.4
    - TypeScript: 5.4.x → 6.0.x
    - Vitest: 2.1.9 → 4.0.8
    - NestJS: 10.0.0 → 10.4.15
 
    ## Breaking Changes Fixed
+
    - TypeScript 6 stricter type checking
    - Removed Vitest workarounds
    - Updated test configurations
 
    ## Known Issues
+
    - [List any remaining issues]
    ```
 
 ### Step 13: Final Verification (30 min)
 
 1. **Run full build:**
+
    ```bash
    npx nx run-many --target=build --all
    ```
 
 2. **Run all tests:**
+
    ```bash
    npx nx run-many --target=test --all
    ```
 
 3. **Run all linting:**
+
    ```bash
    npx nx run-many --target=lint --all
    ```
 
 4. **Test Docker builds:**
+
    ```bash
    npm run start
    # Wait for services to start
@@ -545,6 +588,7 @@ This is the most time-consuming step. Common issues:
    ```
 
 5. **Check for npm vulnerabilities:**
+
    ```bash
    npm audit
    # Expect significant reduction in vulnerabilities
@@ -561,6 +605,7 @@ This is the most time-consuming step. Common issues:
 Before marking Phase 0.2 complete:
 
 ### Package Versions
+
 - [ ] Angular packages are 22.0.4
 - [ ] TypeScript is 6.0.x
 - [ ] Vitest is 4.0.8
@@ -568,6 +613,7 @@ Before marking Phase 0.2 complete:
 - [ ] No legacy-peer-deps warnings (or minimal)
 
 ### Frontend
+
 - [ ] Frontend builds successfully: `npx nx build frontend`
 - [ ] Frontend tests pass: `npx nx test frontend`
 - [ ] Frontend serves without errors: `npx nx serve frontend`
@@ -575,6 +621,7 @@ Before marking Phase 0.2 complete:
 - [ ] Vitest native support works (no workarounds)
 
 ### Backend Services
+
 - [ ] All 5 services build successfully
 - [ ] All backend tests pass
 - [ ] Services start individually with `npx nx serve <service>`
@@ -582,6 +629,7 @@ Before marking Phase 0.2 complete:
 - [ ] Health endpoints respond
 
 ### Testing
+
 - [ ] Vitest runs with native Angular 22 support
 - [ ] All frontend tests pass
 - [ ] All backend Jest tests pass
@@ -589,12 +637,14 @@ Before marking Phase 0.2 complete:
 - [ ] No test-related errors
 
 ### Dependencies
+
 - [ ] No missing peer dependencies
 - [ ] npm install runs without errors
 - [ ] npm audit shows reduced vulnerabilities
 - [ ] No deprecated packages in critical path
 
 ### CI/CD
+
 - [ ] GitHub Actions workflow still works
 - [ ] All CI checks pass
 - [ ] No new workflow errors
@@ -604,6 +654,7 @@ Before marking Phase 0.2 complete:
 If something goes critically wrong:
 
 ### Quick Rollback with Git
+
 ```bash
 # See recent commits
 git log --oneline -5
@@ -623,7 +674,9 @@ npx nx build frontend
 ```
 
 ### Partial Rollback
+
 If only specific packages are problematic:
+
 ```bash
 # Rollback just Angular
 npm install @angular/core@18.2.14 @angular/common@18.2.14
@@ -636,47 +689,59 @@ npm install typescript@5.4.0
 ## Common Issues & Solutions
 
 ### Issue: "TypeScript version mismatch"
+
 **Solution:**
+
 ```bash
 rm -rf node_modules package-lock.json
 npm install
 ```
 
 ### Issue: "Cannot find module '@angular/...'"
+
 **Solution:**
-Ensure all @angular/* packages are the same version:
+Ensure all @angular/\* packages are the same version:
+
 ```bash
 npm list | grep @angular
 npm install @angular/core@22.0.4 @angular/common@22.0.4 # etc.
 ```
 
 ### Issue: "Peer dependency warnings"
+
 **Solution:**
 Check if warnings are critical. Some can be ignored:
+
 ```bash
 npm install --legacy-peer-deps  # Last resort
 ```
 
 ### Issue: "Vitest tests fail with 'Cannot resolve component'"
+
 **Solution:**
 Ensure test-setup.ts initializes Angular testing environment:
+
 ```typescript
 getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting()
+  platformBrowserDynamicTesting(),
 );
 ```
 
 ### Issue: "Build fails with TypeScript errors"
+
 **Solution:**
 TypeScript 6 is stricter:
+
 - Add explicit type annotations
 - Fix null/undefined handling
 - Use optional chaining (?.)
 - Add type guards where needed
 
 ### Issue: "Angular build fails"
+
 **Solution:**
+
 ```bash
 # Clear Angular cache
 rm -rf .angular/cache
@@ -689,8 +754,10 @@ npx nx build frontend
 ```
 
 ### Issue: "NestJS services fail to start"
+
 **Solution:**
 Check for deprecated NestJS imports:
+
 ```bash
 # Search for deprecation warnings
 npx nx serve api-gateway | grep -i deprecat
@@ -699,6 +766,7 @@ npx nx serve api-gateway | grep -i deprecat
 ## Expected Results
 
 ### Before (Current State)
+
 - Angular 18.2.14
 - TypeScript 5.4.x
 - Vitest 2.1.9 (with workarounds)
@@ -707,6 +775,7 @@ npx nx serve api-gateway | grep -i deprecat
 - No native testing support
 
 ### After (Target State)
+
 - Angular 22.0.4
 - TypeScript 6.0.x
 - Vitest 4.0.8 (native support)
@@ -736,11 +805,13 @@ npx nx serve api-gateway | grep -i deprecat
 ## Risk Mitigation
 
 ### High Risk Areas
+
 1. **TypeScript 6 breaking changes** - Allocated 1-2 hours for fixes
 2. **Angular 22 component changes** - May need template updates
 3. **Test failures** - Allocated 1 hour for test fixes
 
 ### Mitigation Strategies
+
 - Keep backup branch
 - Upgrade in isolated branch first
 - Test incrementally
@@ -761,26 +832,6 @@ Phase 0.2 is successful when:
 8. ✅ No legacy-peer-deps needed
 9. ✅ Documentation updated
 10. ✅ CI/CD pipeline passes
-
-## Next Steps After Phase 0.2
-
-### Phase 0.3: Restructure Infrastructure Folder (0.5 day)
-- Move `backend/infrastructure/` to root `infrastructure/`
-- Update docker-compose paths
-- Infrastructure orchestrates entire system
-
-### Phase 0.4: Fix RxJS Duplication Hack (0.5 day)
-- Remove `backend/scripts/remove-duplicate-rxjs.js`
-- Let Nx/npm handle dependency deduplication
-
-### Phase 0.5: Extract Infrastructure Modules (2-3 days)
-- Create shared libraries
-- Reduce code duplication
-- Improve maintainability
-
-### Phase 0.6: Pre-commit Hooks (0.5 day)
-- Install Husky + lint-staged
-- Enforce code quality
 
 ---
 
@@ -829,7 +880,7 @@ All packages installed at end of Phase 0.2 (including unplanned upgrades from St
 ### Notable Deviations from Original Plan
 
 | Package          | Plan        | Actual     | Reason                                                                                                                                                          |
-|------------------|-------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------- | ----------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@nestjs/*`      | v10         | v11        | Pre-migration codebase was v11; v10 target was incorrect                                                                                                        |
 | `typeorm`        | not in plan | `^1.0.0`   | Stable release of TypeORM; breaking `relations` syntax change patched                                                                                           |
 | `mongoose`       | not in plan | `^9.7.3`   | Major upgrade; removed deprecated driver options patched                                                                                                        |
@@ -848,6 +899,5 @@ All packages installed at end of Phase 0.2 (including unplanned upgrades from St
 
 ---
 
-**Phase 0.2 Status**: ✅ COMPLETE
-**Actual Duration**: ~2 sessions
-**Next Phase**: Phase 0.3 — Rewrite Backend E2E Tests
+**Phase 0.2 Status**: Ready to implement
+**Next Phase**: Phase 0.3 — Restructure Infrastructure Folder
