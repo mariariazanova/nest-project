@@ -7,11 +7,13 @@ Remove `backend/scripts/remove-duplicate-rxjs.js` — a manual file-deletion hac
 ## Scope
 
 ✅ **In Scope:**
+
 - Delete `backend/scripts/remove-duplicate-rxjs.js`
 - Verify a clean single RxJS installation
 - Update any documentation that references the script
 
 ❌ **Out of Scope:**
+
 - No changes to how RxJS is used in application code
 - No shared library extraction (Phase 0.5)
 - No other scripts or infrastructure changes
@@ -37,7 +39,7 @@ node_modules/@angular-devkit/schematics/node_modules/rxjs
 Both categories of target paths no longer exist:
 
 | Path                                  | Why it's gone                                                                                        |
-|---------------------------------------|------------------------------------------------------------------------------------------------------|
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `services/*/node_modules/rxjs`        | The `services/` directory was deleted in Phase 0.1 (Nx migration moved all apps to `apps/`)          |
 | `@angular-devkit/*/node_modules/rxjs` | Angular 22 (Phase 0.2) resolved the nested install; `@angular-devkit` no longer vendors its own RxJS |
 
@@ -45,8 +47,8 @@ Both categories of target paths no longer exist:
 
 ## Current State Audit
 
-| Check                                       | Result                                 |
-|---------------------------------------------|----------------------------------------|
+| Check                                       | Result                                  |
+| ------------------------------------------- | --------------------------------------- |
 | `node_modules/rxjs` at root                 | ✅ `7.8.2`                              |
 | Nested `rxjs` anywhere under `node_modules` | ✅ None (only root copy)                |
 | `services/*/node_modules/rxjs`              | ✅ `services/` directory does not exist |
@@ -69,6 +71,7 @@ find node_modules -name "rxjs" -maxdepth 4 -type d
 ```
 
 Expected output:
+
 ```
 node_modules/rxjs
 ```
@@ -94,6 +97,7 @@ rm backend/scripts/remove-duplicate-rxjs.js
 ```
 
 Verify it's gone:
+
 ```bash
 ls backend/scripts/
 ```
@@ -138,10 +142,12 @@ Remove or update any instructions that told developers to run the script manuall
 ## Verification Checklist
 
 ### Before Deletion
+
 - [ ] `find node_modules -name "rxjs" -maxdepth 4 -type d` — only one result
 - [ ] `grep -r "remove-duplicate-rxjs"` — no files found
 
 ### After Changes
+
 - [ ] `backend/scripts/remove-duplicate-rxjs.js` is deleted
 - [ ] `find node_modules -name "rxjs" -maxdepth 4 -type d` — still only one result
 - [ ] `nx run-many -t build --all` — all pass
@@ -164,19 +170,24 @@ No other files are changed, so there is nothing else to revert.
 
 ---
 
-## Timeline Summary
-
-| Step  | Task                                           | Time        |
-|-------|------------------------------------------------|-------------|
-| 1     | Confirm no nested RxJS + no references to hack | 10 min      |
-| 2     | Delete hack script                             | 5 min       |
-| 3     | Verify builds and tests pass                   | 30 min      |
-| 4     | Update documentation                           | 10 min      |
-|       | **Total**                                      | **~55 min** |
-
----
-
 ## Benefits After Phase 0.4
 
 - **Dead code removed**: the script was a no-op since Phase 0.1 — deleting it removes confusion for future developers
 - **`backend/scripts/` cleaned up**: only genuinely useful scripts remain (`stop-and-reset.js`, `health-check.sh`)
+
+---
+
+## Timeline Summary
+
+| Step      | Task                                           | Time        |
+| --------- | ---------------------------------------------- | ----------- |
+| 1         | Confirm no nested RxJS + no references to hack | 10 min      |
+| 2         | Delete hack script                             | 5 min       |
+| 3         | Verify builds and tests pass                   | 30 min      |
+| 4         | Update documentation                           | 10 min      |
+| **Total** |                                                | **~55 min** |
+
+---
+
+**Phase 0.4 Status**: Ready to implement
+**Next Phase**: Phase 0.5 — Extract Infrastructure Modules to Shared Libraries

@@ -70,7 +70,7 @@ include:
 The compose file moved from 2 levels deep (`backend/infrastructure/`) to 1 level deep (`infrastructure/`), so all build contexts changed:
 
 | Field                                  | Before                                          | After                                   |
-|----------------------------------------|-------------------------------------------------|-----------------------------------------|
+| -------------------------------------- | ----------------------------------------------- | --------------------------------------- |
 | `build.context` (all 6 services)       | `../..`                                         | `..`                                    |
 | `build.dockerfile` (5 NestJS services) | `backend/infrastructure/Dockerfile.nx-services` | `infrastructure/Dockerfile.nx-services` |
 | `build.dockerfile` (frontend)          | `backend/infrastructure/Dockerfile.frontend`    | `infrastructure/Dockerfile.frontend`    |
@@ -81,7 +81,8 @@ Volume mounts (`./monitoring/prometheus.yml`, `./monitoring/provisioning`) requi
 
 ```yaml
 healthcheck:
-  test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+  test:
+    ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://localhost:80/']
   interval: 30s
   timeout: 10s
   retries: 3
@@ -93,7 +94,7 @@ healthcheck:
 ### Step 4: Update Root `package.json` Scripts ✅
 
 | Script  | Before                                                       | After                                                |
-|---------|--------------------------------------------------------------|------------------------------------------------------|
+| ------- | ------------------------------------------------------------ | ---------------------------------------------------- |
 | `start` | `-f backend/infrastructure/docker-compose.yml up -d --build` | `-f infrastructure/docker-compose.yml up -d --build` |
 | `stop`  | `-f backend/infrastructure/docker-compose.yml down ...`      | `-f infrastructure/docker-compose.yml down ...`      |
 | `reset` | `-f backend/infrastructure/docker-compose.yml down -v`       | `-f infrastructure/docker-compose.yml down -v`       |
@@ -157,7 +158,7 @@ npm start    # docker compose -f infrastructure/docker-compose.yml up -d --build
 All 6 images built successfully. All 15 containers started and became healthy:
 
 | Endpoint                                        | Result      |
-|-------------------------------------------------|-------------|
+| ----------------------------------------------- | ----------- |
 | `http://localhost:3000/v1/health` (api-gateway) | ✅ HTTP 200 |
 | `http://localhost:4200` (frontend)              | ✅ HTTP 200 |
 | `http://localhost:9090/-/ready` (prometheus)    | ✅ HTTP 200 |
@@ -174,6 +175,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ## Verification Checklist
 
 ### Path Changes
+
 - ✅ `infrastructure/` folder exists at workspace root
 - ✅ `backend/infrastructure/` folder is gone
 - ✅ `docker-compose.yml` (root) — include path updated
@@ -184,6 +186,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 - ✅ `backend/package.json` — legacy scripts updated
 
 ### Functional Verification
+
 - ✅ `docker compose -f infrastructure/docker-compose.yml config` — no errors
 - ✅ `docker compose config` (root wrapper) — no errors
 - ✅ `npm start` — all 15 containers started
@@ -192,6 +195,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 - ✅ `npm stop` — all containers stopped cleanly, JWT rotated
 
 ### Documentation
+
 - ✅ No stale `backend/infrastructure` references in functional files
 - ✅ Remaining references in `.md` files are intentional before/after descriptions or historical records
 
@@ -200,6 +204,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ## Issues Encountered & Root Cause Analysis
 
 ### Issue 1: Pre-existing Docker Compose Conflict
+
 **Severity**: Medium
 
 **Problem**: `docker compose config` reported `"services.frontend conflicts with imported resource"`. Root `docker-compose.yml` contained a stale `services: frontend:` block that referenced a non-existent `./frontend/Dockerfile`. The `include:` directive does not allow services defined in the including file to share names with services in the included file.
@@ -211,6 +216,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ---
 
 ### Issue 2: Frontend Healthcheck Lost
+
 **Severity**: Low
 
 **Problem**: After removing the stale root `services:` block (Issue 1), the `frontend` service in `infrastructure/docker-compose.yml` had no `healthcheck:`. The healthcheck had been defined only on the removed root block.
@@ -220,6 +226,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ---
 
 ### Issue 3: PowerShell Encoding Corruption
+
 **Severity**: Medium
 
 **Problem**: Batch PowerShell replace using `Get-Content -Raw` read UTF-8 files as Windows-1252 (PowerShell 5.1 default). Re-writing with `Set-Content -Encoding utf8` garbled multi-byte characters: `—` → `â€"`, `→` → `â†'`, `×` → `Ã—`.
@@ -231,6 +238,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ---
 
 ### Issue 4: Completion Reports Accidentally Modified
+
 **Severity**: Medium
 
 **Problem**: Batch replace ran on all `*.md` files including historical completion reports (`PHASE-0.1-COMPLETION-REPORT.md`, `PHASE-0.2-COMPLETION-REPORT.md`, etc.) which are immutable records and must never be changed after written.
@@ -242,6 +250,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ---
 
 ### Issue 5: `postgres-favorites` Timing Failure on First `npm start`
+
 **Severity**: Low
 
 **Problem**: First run of `npm start` (with `--build`) failed with `"dependency failed to start: container postgres-favorites is unhealthy"`. The container was actually healthy by the time the error was caught — the `depends_on` health check fired during a brief window where `pg_isready` hadn't responded yet.
@@ -255,7 +264,7 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 ## Plan vs Actual Comparison
 
 | Step                                           | Estimate      | Actual        | Notes                                                                         |
-|------------------------------------------------|---------------|---------------|-------------------------------------------------------------------------------|
+| ---------------------------------------------- | ------------- | ------------- | ----------------------------------------------------------------------------- |
 | 1 — Move the folder                            | 10 min        | ✅            | `mv` failed on Windows; used PowerShell `Move-Item`                           |
 | 2 — Update root docker-compose.yml             | 5 min         | ✅ + extra    | Discovered and resolved pre-existing `include:` conflict                      |
 | 3 — Update build contexts and Dockerfile paths | 15 min        | ✅ + extra    | Restored lost frontend healthcheck                                            |
@@ -271,24 +280,21 @@ All containers stopped cleanly. `stop-and-reset.js` generated a new `JWT_SECRET`
 
 ## Files Modified
 
-### Moved
-- `backend/infrastructure/` → `infrastructure/` (entire folder with all contents)
-
-### Modified
-- `docker-compose.yml` (root) — include path updated; stale `frontend` service block removed
-- `infrastructure/docker-compose.yml` — 6× `context: ..`, 6× Dockerfile paths, frontend healthcheck added
-- `package.json` (root) — 4 npm scripts updated
-- `backend/package.json` — 2 legacy docker scripts updated
-- `backend/scripts/stop-and-reset.js` — infrastructure path updated
-- `ENHANCEMENT-PLAN.md` — Phase 0.3 description corrected; encoding corruption fixed
-- `PHASE-0.3-INFRASTRUCTURE-RESTRUCTURE.md` — status block moved to this report; timeline total recalculated
-
-### Reverted (no net change)
-- `PHASE-0.1-COMPLETION-REPORT.md` — accidentally modified by batch replace; reverted
-- `PHASE-0.1-NX-SETUP.md` — same
-- `PHASE-0.2-COMPLETION-REPORT.md` — same
-- `PHASE-0.2-PACKAGE-UPDATES.md` — same
-- `MIGRATION-NOTES.md` — same
+| File                                          | Change                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------------- |
+| `backend/infrastructure/` → `infrastructure/` | Moved — entire folder with all contents                                   |
+| `docker-compose.yml` (root)                   | Include path updated; stale `frontend` service block removed              |
+| `infrastructure/docker-compose.yml`           | 6× `context: ..`, 6× Dockerfile paths updated; frontend healthcheck added |
+| `package.json` (root)                         | 4 npm scripts updated to new infrastructure path                          |
+| `backend/package.json`                        | 2 legacy docker scripts updated                                           |
+| `backend/scripts/stop-and-reset.js`           | Infrastructure path updated                                               |
+| `ENHANCEMENT-PLAN.md`                         | Phase 0.3 description corrected; encoding corruption fixed                |
+| `PHASE-0.3-INFRASTRUCTURE-RESTRUCTURE.md`     | Status block moved to this report; timeline total recalculated            |
+| `PHASE-0.1-COMPLETION-REPORT.md`              | Reverted — accidentally modified by batch replace (no net change)         |
+| `PHASE-0.1-NX-SETUP.md`                       | Reverted — same reason (no net change)                                    |
+| `PHASE-0.2-COMPLETION-REPORT.md`              | Reverted — same reason (no net change)                                    |
+| `PHASE-0.2-PACKAGE-UPDATES.md`                | Reverted — same reason (no net change)                                    |
+| `MIGRATION-NOTES.md`                          | Reverted — same reason (no net change)                                    |
 
 ---
 
