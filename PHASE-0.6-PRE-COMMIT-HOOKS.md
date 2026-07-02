@@ -35,7 +35,7 @@ Both are `devDependencies`.
 
 ---
 
-## Step 1: Install packages
+## Step 1: Install packages (5 min)
 
 ```bash
 npm install --save-dev husky lint-staged
@@ -43,7 +43,7 @@ npm install --save-dev husky lint-staged
 
 ---
 
-## Step 2: Initialise Husky
+## Step 2: Initialise Husky (5 min)
 
 Husky v9+ uses the `husky init` command which creates `.husky/` and adds a `prepare` script to `package.json`:
 
@@ -60,7 +60,7 @@ The `prepare` script runs automatically on `npm install`, so all developers get 
 
 ---
 
-## Step 3: Configure lint-staged
+## Step 3: Configure lint-staged (15 min)
 
 Add to `package.json` root (alongside `scripts`):
 
@@ -86,7 +86,7 @@ Add to `package.json` root (alongside `scripts`):
 
 ---
 
-## Step 4: Pre-commit hook — lint + format staged files
+## Step 4: Pre-commit hook — lint + format staged files (5 min)
 
 Replace the default `.husky/pre-commit` with:
 
@@ -101,7 +101,7 @@ No pre-push hook — tests are handled entirely by GitHub Actions.
 
 ---
 
-## Step 5: Split GitHub Actions into two workflows
+## Step 5: Split GitHub Actions into two workflows (30 min)
 
 Replace the single `angular-test.yml` with two focused workflows:
 
@@ -194,7 +194,7 @@ jobs:
 
 ---
 
-## Step 6: Verify
+## Step 6: Verify (30 min)
 
 ```bash
 # Trigger pre-commit manually
@@ -237,5 +237,5 @@ All 5 BE e2e spec files have been commented out (Nx scaffolding stubs, wrong API
 
 ---
 
-**Estimate**: 0.5 day (1 developer)
+**Estimate**: 90 min core (step 1–6) + buffer for CI/environment issues → 0.5 day (1 developer)
 **Next Phase**: Phase 1.1 — Database Migrations
