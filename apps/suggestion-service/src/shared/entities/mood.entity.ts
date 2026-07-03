@@ -12,15 +12,15 @@ export class MoodEntity {
   @Column({ unique: true })
   name: string;
 
-  @ManyToMany(() => BookEntity, (book) => book.genres)
+  @ManyToMany(() => BookEntity, (book) => book.moods)
   books: BookEntity[];
 
-  @ManyToMany(() => FilmEntity, (film) => film.genres)
+  @ManyToMany(() => FilmEntity, (film) => film.moods)
   films: FilmEntity[];
 
-  @ManyToMany(() => SongEntity, (song) => song.genres)
+  @ManyToMany(() => SongEntity, (song) => song.moods)
   songs: SongEntity[];
 
-  @ManyToMany(() => GameEntity, (game) => game.genres)
+  @ManyToMany(() => GameEntity, (game) => game.moods)
   games: GameEntity[];
 }

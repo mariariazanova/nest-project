@@ -1,4 +1,11 @@
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { MoodEntity } from '../../shared/entities/mood.entity';
 import { GenreEntity } from '../../shared/entities/genre.entity';
 import { EventEntity } from '../../shared/entities/event.entity';
@@ -8,15 +15,18 @@ export class FilmEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   title: string;
 
   @Column({ nullable: true })
   description?: string;
 
+  @Index()
   @Column({ nullable: true })
   director?: string;
 
+  @Index()
   @Column({ nullable: true, type: 'int' })
   year?: number;
 

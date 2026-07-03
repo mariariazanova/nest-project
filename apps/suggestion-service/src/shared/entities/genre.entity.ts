@@ -7,7 +7,7 @@ import { GameEntity } from '../../suggestion/entities/game.entity';
 @Entity()
 export class GenreEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column({ unique: true })
   name: string;

@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index, Unique } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Unique,
+} from 'typeorm';
 
 export enum FavoriteCategory {
   BOOK = 'books',
@@ -14,7 +20,6 @@ export class FavoriteEntity {
   id: string;
 
   @Column({ nullable: false })
-  @Index()
   userId: string;
 
   @Column({ nullable: false })
