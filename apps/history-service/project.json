@@ -22,9 +22,7 @@
       }
     },
     "prune-lockfile": {
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "cache": true,
       "executor": "@nx/js:prune-lockfile",
       "outputs": [
@@ -36,9 +34,7 @@
       }
     },
     "copy-workspace-modules": {
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "cache": true,
       "outputs": [
         "{workspaceRoot}/dist/apps/history-service/workspace_modules"
@@ -49,10 +45,7 @@
       }
     },
     "prune": {
-      "dependsOn": [
-        "prune-lockfile",
-        "copy-workspace-modules"
-      ],
+      "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
       "executor": "nx:noop"
     },
     "test": {
@@ -66,9 +59,7 @@
       "continuous": true,
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
-      "dependsOn": [
-        "build"
-      ],
+      "dependsOn": ["build"],
       "options": {
         "buildTarget": "history-service:build",
         "runBuildTargetDependencies": false
@@ -80,6 +71,34 @@
         "production": {
           "buildTarget": "history-service:build:production"
         }
+      }
+    },
+    "migration:create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx migrate-mongo create {args.name}",
+        "cwd": "apps/history-service"
+      }
+    },
+    "migration:up": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx migrate-mongo up",
+        "cwd": "apps/history-service"
+      }
+    },
+    "migration:down": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx migrate-mongo down",
+        "cwd": "apps/history-service"
+      }
+    },
+    "migration:status": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx migrate-mongo status",
+        "cwd": "apps/history-service"
       }
     }
   },

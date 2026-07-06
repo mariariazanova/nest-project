@@ -31,8 +31,14 @@ import { FavoriteEntity } from './favorite/entities/favorite.entity';
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
         entities: [FavoriteEntity],
-        synchronize: config.get<string>('NODE_ENV') === 'development',
+        synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/migrations/*.js'],
         logging: config.get<string>('NODE_ENV') === 'development',
+        ssl:
+          config.get<string>('NODE_ENV') === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
 
@@ -46,10 +52,10 @@ import { FavoriteEntity } from './favorite/entities/favorite.entity';
         const port = config.get<string>('REDIS_PORT', '6379');
         const password = config.get<string>('REDIS_PASSWORD');
         const url = password
-          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/0`
-          : `redis://${host}:${port}/0`;
+          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/3`
+          : `redis://${host}:${port}/3`;
         return {
-          stores: [new KeyvRedis(url)],
+          stores: [new KeyvRedis(url, { connectionTimeout: 10_000 })],
           ttl: 900_000,
         };
       },

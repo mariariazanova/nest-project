@@ -188,16 +188,16 @@ Apply the same block to `apps/suggestion-service/project.json` and `apps/favorit
 
 ```bash
 # Generate a migration (postgres must be running, name is required)
-pnpm nx run auth-service:migration:generate --args="--name=InitialSchema"
+npm exec nx -- run auth-service:migration:generate --args="--name=InitialSchema"
 
 # Run all pending migrations
-pnpm nx run auth-service:migration:run
+npm exec nx -- run auth-service:migration:run
 
 # Revert the last applied migration
-pnpm nx run auth-service:migration:revert
+npm exec nx -- run auth-service:migration:revert
 
 # Show migration status
-pnpm nx run auth-service:migration:show
+npm exec nx -- run auth-service:migration:show
 ```
 
 ### Install `typeorm-ts-node-commonjs` wrapper
@@ -501,13 +501,13 @@ docker compose -f infrastructure/docker-compose.yml up postgres-auth postgres-su
 
 # Generate initial migration for each service
 DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=postgres DB_NAME=auth_db \
-  pnpm nx run auth-service:migration:generate --args="--name=InitialSchema"
+  npm exec nx -- run auth-service:migration:generate --args="--name=InitialSchema"
 
 DB_HOST=localhost DB_PORT=5433 DB_USER=postgres DB_PASSWORD=postgres DB_NAME=suggestions_db \
-  pnpm nx run suggestion-service:migration:generate --args="--name=InitialSchema"
+  npm exec nx -- run suggestion-service:migration:generate --args="--name=InitialSchema"
 
 DB_HOST=localhost DB_PORT=5434 DB_USER=postgres DB_PASSWORD=postgres DB_NAME=favorites_db \
-  pnpm nx run favorite-service:migration:generate --args="--name=InitialSchema"
+  npm exec nx -- run favorite-service:migration:generate --args="--name=InitialSchema"
 ```
 
 Each command creates a timestamped file:
@@ -582,15 +582,14 @@ entities: [
 ],
 ```
 
-### All MongoDB services — disable `autoIndex` in production
+### MongoDB service — disable `autoIndex` in production
 
-Both `history-service` and `suggestion-service` use `MongooseModule`. With the default `autoIndex: true`, Mongoose rebuilds all indexes on every startup — fine for development, expensive in production where it blocks the connection until complete on large collections.
+Only `history-service` uses `MongooseModule` (`suggestion-service` is PostgreSQL only). With the default `autoIndex: true`, Mongoose rebuilds all indexes on every startup — fine for development, expensive in production where it blocks the connection until complete on large collections.
 
-Update both `MongooseModule.forRootAsync` configs:
+Update the `MongooseModule.forRootAsync` config:
 
 ```typescript
 // apps/history-service/src/app.module.ts
-// apps/suggestion-service/src/app.module.ts
 MongooseModule.forRootAsync({
   useFactory: (config: ConfigService) => ({
     uri: config.get('MONGODB_URI'),
@@ -626,7 +625,7 @@ On startup each service should log:
 
 ```bash
 DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=postgres DB_NAME=auth_db \
-  pnpm nx run auth-service:migration:show
+  npm exec nx -- run auth-service:migration:show
 ```
 
 Expected output:
@@ -660,7 +659,7 @@ Add a `MIGRATIONS.md` at the workspace root explaining day-to-day usage.
 # 1. Edit the entity file
 # 2. Generate migration (DB must be running with current schema)
 DB_HOST=localhost DB_PORT=5432 ... \
-  pnpm nx run auth-service:migration:generate --args="--name=AddEmailToUser"
+  npm exec nx -- run auth-service:migration:generate --args="--name=AddEmailToUser"
 
 # 3. Review the generated file in src/migrations/
 # 4. Commit both the entity change and the migration file together
@@ -671,7 +670,7 @@ DB_HOST=localhost DB_PORT=5432 ... \
 
 ```bash
 # Revert the last applied migration
-DB_HOST=localhost ... pnpm nx run auth-service:migration:revert
+DB_HOST=localhost ... npm exec nx -- run auth-service:migration:revert
 ```
 
 ### Rules
@@ -690,7 +689,7 @@ TypeORM's `migration:generate` **cannot detect enum value additions** — `ALTER
 ```bash
 # 1. Add the new value to the TypeScript enum
 # 2. Create an empty migration (don't use migration:generate — it produces nothing)
-pnpm nx run auth-service:migration:generate --args="--name=AddAdminRole"
+npm exec nx -- run auth-service:migration:generate --args="--name=AddAdminRole"
 # 3. Open the generated file and replace the empty up()/down() bodies:
 ```
 
@@ -741,10 +740,7 @@ module.exports = {
       process.env.MONGODB_URI ??
       'mongodb://root:rootpass@localhost:27017/history_db?authSource=admin',
     databaseName: process.env.DB_NAME ?? 'history_db',
-    options: {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    },
+    options: {},
   },
   migrationsDir: 'src/migrations',
   changelogCollectionName: 'migrations', // stored in MongoDB, same idea as TypeORM migrations table
@@ -816,7 +812,7 @@ migrate-mongo's role here is **future structural changes** that Mongoose schema 
 The first migration establishes migrate-mongo tracking and adds MongoDB-level schema validation (a layer of data integrity the Mongoose schema alone cannot enforce at the database engine level):
 
 ```bash
-pnpm nx run history-service:migration:create --args="--name=InitialValidation"
+npm exec nx -- run history-service:migration:create --args="--name=InitialValidation"
 ```
 
 Edit the generated file:
@@ -824,6 +820,14 @@ Edit the generated file:
 ```javascript
 module.exports = {
   async up(db) {
+    // collMod requires the collection to exist — create it if this is a fresh DB
+    const collections = await db
+      .listCollections({ name: 'suggestionhistories' })
+      .toArray();
+    if (collections.length === 0) {
+      await db.createCollection('suggestionhistories');
+    }
+
     // Add collection-level JSON Schema validation
     // This enforces required fields at the MongoDB engine level,
     // independent of whether the app uses Mongoose or connects directly.
@@ -861,7 +865,7 @@ module.exports = {
 
 ```bash
 MONGODB_URI=mongodb://root:rootpass@localhost:27017/history_db?authSource=admin \
-  pnpm nx run history-service:migration:up
+  npm exec nx -- run history-service:migration:up
 ```
 
 ### Run on NestJS startup via lifecycle hook
@@ -1001,7 +1005,7 @@ The DataSource files in this plan only import local entities (no `@suggestify/*`
 | `apps/suggestion-service/project.json`                                                 | Add migration:generate/run/revert/show targets                                                            |
 | `apps/favorite-service/project.json`                                                   | Add migration:generate/run/revert/show targets                                                            |
 | `apps/auth-service/src/app.module.ts`                                                  | `synchronize: false`, `migrationsRun: true`, `migrations: [...]`                                          |
-| `apps/suggestion-service/src/app.module.ts`                                            | Same + add SSL config + add 3 missing entities + set `autoIndex` by env + fix Redis DB slot (`/0` → `/2`) |
+| `apps/suggestion-service/src/app.module.ts`                                            | Same + add SSL config + add 3 missing entities + fix Redis DB slot (`/0` → `/2`)                          |
 | `apps/favorite-service/src/app.module.ts`                                              | Same + add SSL config + fix Redis DB slot (`/0` → `/3`) + add `connectionTimeout: 10_000` to `KeyvRedis`  |
 | `apps/history-service/src/app.module.ts`                                               | Set `autoIndex` by env + fix Redis DB slot (`/0` → `/4`) + add `connectionTimeout: 10_000` to `KeyvRedis` |
 | `apps/favorite-service/src/favorite/entities/favorite.entity.ts`                       | Remove redundant `@Index()` on `userId` (covered by composite unique index)                               |

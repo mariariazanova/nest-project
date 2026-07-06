@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { MetricsModule } from '@suggestify/backend/metrics';
+import { DatabaseMigrationService } from './database/database-migration.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MetricsModule } from '@suggestify/backend/metrics';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         uri: config.get('MONGODB_URI'),
+        autoIndex: config.get<string>('NODE_ENV') !== 'production',
       }),
     }),
 
@@ -36,10 +38,10 @@ import { MetricsModule } from '@suggestify/backend/metrics';
         const port = config.get<string>('REDIS_PORT', '6379');
         const password = config.get<string>('REDIS_PASSWORD');
         const url = password
-          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/0`
-          : `redis://${host}:${port}/0`;
+          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/4`
+          : `redis://${host}:${port}/4`;
         return {
-          stores: [new KeyvRedis(url)],
+          stores: [new KeyvRedis(url, { connectionTimeout: 10_000 })],
           ttl: 900_000,
         };
       },
@@ -55,5 +57,6 @@ import { MetricsModule } from '@suggestify/backend/metrics';
     CircuitBreakerModule,
     MetricsModule,
   ],
+  providers: [DatabaseMigrationService],
 })
 export class AppModule {}

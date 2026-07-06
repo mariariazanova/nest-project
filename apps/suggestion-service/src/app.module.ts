@@ -16,6 +16,9 @@ import { SongEntity } from './suggestion/entities/song.entity';
 import { MoodEntity } from './shared/entities/mood.entity';
 import { GenreEntity } from './shared/entities/genre.entity';
 import { EventEntity } from './shared/entities/event.entity';
+import { UserEntity } from './suggestion/entities/user.entity';
+import { UserSuggestionEntity } from './suggestion/entities/user-suggestions.entity';
+import { UserSuggestionCategoryEntity } from './suggestion/entities/user-suggestion-categories.entity';
 
 @Module({
   imports: [
@@ -42,9 +45,18 @@ import { EventEntity } from './shared/entities/event.entity';
           MoodEntity,
           GenreEntity,
           EventEntity,
+          UserEntity,
+          UserSuggestionEntity,
+          UserSuggestionCategoryEntity,
         ],
-        synchronize: config.get<string>('NODE_ENV') === 'development',
+        synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/migrations/*.js'],
         logging: config.get<string>('NODE_ENV') === 'development',
+        ssl:
+          config.get<string>('NODE_ENV') === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
 
@@ -58,8 +70,8 @@ import { EventEntity } from './shared/entities/event.entity';
         const port = config.get<string>('REDIS_PORT', '6379');
         const password = config.get<string>('REDIS_PASSWORD');
         const url = password
-          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/0`
-          : `redis://${host}:${port}/0`;
+          ? `redis://:${encodeURIComponent(password)}@${host}:${port}/2`
+          : `redis://${host}:${port}/2`;
         return {
           stores: [new KeyvRedis(url, { connectionTimeout: 10_000 })],
           ttl: 3_600_000,

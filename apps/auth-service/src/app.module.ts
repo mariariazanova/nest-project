@@ -35,9 +35,14 @@ import { UserEntity } from './users/entities/user.entity';
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
         entities: [UserEntity],
-        synchronize: config.get<string>('NODE_ENV') === 'development',
+        synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/migrations/*.js'],
         logging: config.get<string>('NODE_ENV') === 'development',
-        ssl: config.get<string>('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
+        ssl:
+          config.get<string>('NODE_ENV') === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
 

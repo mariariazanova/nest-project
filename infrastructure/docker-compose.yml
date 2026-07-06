@@ -10,13 +10,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres-auth-data:/var/lib/postgresql/data
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,13 +30,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5433:5432"
+      - '5433:5432'
     volumes:
       - postgres-suggestions-data:/var/lib/postgresql/data
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,13 +50,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5434:5432"
+      - '5434:5432'
     volumes:
       - postgres-favorites-data:/var/lib/postgresql/data
     networks:
       - microservices-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,7 +70,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: rootpass
       MONGO_INITDB_DATABASE: history_db
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongodb-data:/data/db
     networks:
@@ -85,15 +85,19 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis
-    command: redis-server --requirepass redispass
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redispass}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -107,8 +111,8 @@ services:
       RABBITMQ_DEFAULT_PASS: rabbitpass
       RABBITMQ_ERLANG_COOKIE: secretcookie
     ports:
-      - "5672:5672"   # AMQP
-      - "15672:15672" # Management UI
+      - '5672:5672' # AMQP
+      - '15672:15672' # Management UI
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
@@ -125,14 +129,14 @@ services:
     container_name: consul
     command: agent -server -ui -node=server-1 -bootstrap-expect=1 -client=0.0.0.0
     ports:
-      - "8500:8500"   # HTTP API & UI
-      - "8600:8600"   # DNS
+      - '8500:8500' # HTTP API & UI
+      - '8600:8600' # DNS
     volumes:
       - consul-data:/consul/data
     networks:
       - microservices-network
     healthcheck:
-      test: ["CMD", "consul", "members"]
+      test: ['CMD', 'consul', 'members']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -166,8 +170,8 @@ services:
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
       - SERVICE_HOST=auth-service
       - CRYPT_SALT=10
-#    ports:
-#      - "3001:3001"
+    #    ports:
+    #      - "3001:3001"
     depends_on:
       postgres-auth:
         condition: service_healthy
@@ -181,7 +185,15 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3001/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -212,8 +224,8 @@ services:
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
       - AUTH_SERVICE_URL=http://auth-service:3001
       - SERVICE_HOST=suggestion-service
-#    ports:
-#      - "3002:3002"
+    #    ports:
+    #      - "3002:3002"
     depends_on:
       postgres-suggestions:
         condition: service_healthy
@@ -227,7 +239,15 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3002/health"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3002/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -255,8 +275,8 @@ services:
       - AUTH_SERVICE_URL=http://auth-service:3001
       - SUGGESTION_SERVICE_URL=http://suggestion-service:3002
       - SERVICE_HOST=history-service
-#    ports:
-#      - "3003:3003"
+    #    ports:
+    #      - "3003:3003"
     depends_on:
       mongodb:
         condition: service_healthy
@@ -270,7 +290,15 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3003/health"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3003/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -300,8 +328,8 @@ services:
       - CONSUL_PORT=8500
       - SERVICE_HOST=favorite-service
       - CORS_ORIGIN=*
-#    ports:
-#      - "3004:3004"
+    #    ports:
+    #      - "3004:3004"
     depends_on:
       postgres-favorites:
         condition: service_healthy
@@ -313,7 +341,15 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3004/health" ]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3004/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -326,7 +362,7 @@ services:
       dockerfile: infrastructure/Dockerfile.frontend
     container_name: frontend
     ports:
-      - "4200:80"
+      - '4200:80'
     depends_on:
       api-gateway:
         condition: service_started
@@ -334,7 +370,15 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:80/',
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -367,7 +411,7 @@ services:
       - SERVICE_HOST=api-gateway
       - CORS_ORIGIN=*
     ports:
-      - "3000:3000"
+      - '3000:3000'
     depends_on:
       auth-service:
         condition: service_healthy
@@ -387,7 +431,15 @@ services:
       - microservices-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/v1/health"]
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3000/v1/health',
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -403,7 +455,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus-data:/prometheus
@@ -421,7 +473,7 @@ services:
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
     ports:
-      - "3050:3000"
+      - '3050:3000'
     volumes:
       - grafana-data:/var/lib/grafana
       - ./monitoring/provisioning:/etc/grafana/provisioning
