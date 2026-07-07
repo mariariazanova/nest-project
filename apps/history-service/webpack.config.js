@@ -15,11 +15,14 @@ module.exports = {
       compiler: 'tsc',
       main: './src/main.ts',
       tsConfig: './tsconfig.app.json',
-      assets: ["./src/assets"],
+      assets: [
+        './src/assets',
+        { input: './src/migrations', glob: '**/*', output: './migrations' },
+      ],
       optimization: false,
       outputHashing: 'none',
       generatePackageJson: true,
       sourceMap: true,
-    })
+    }),
   ],
 };

@@ -219,6 +219,86 @@ if (collections.length === 0) {
 
 Also updated the migration snippet in the plan file.
 
+### Issue 7 — `migrate-mongo` stripped from Docker production image
+
+**Symptom**: history-service container crashed immediately — `Cannot find module 'migrate-mongo'`.
+
+**Root cause**: `migrate-mongo` was declared in `devDependencies`. The Dockerfile runs `npm prune --omit=dev` before assembling the production stage, which removed it entirely from `node_modules`.
+
+**Fix**: Moved `migrate-mongo` from `devDependencies` to `dependencies` in the root `package.json`.
+
+---
+
+### Issue 8 — `migrate-mongo` `up` resolved as a Proxy Promise, not a function
+
+**Symptom**: history-service crashed with `TypeError: up is not a function` despite `migrate-mongo` now being present.
+
+**Root cause**: `migrate-mongo` v14 is ESM-only. Webpack rewrites both static and dynamic `import()` calls it can see into `require()`. `require('migrate-mongo')` hits the package's CJS shim (`lib/migrate-mongo.cjs`), which exports a Proxy where every property access returns a pending Promise — not the actual function.
+
+**Fix**: Used the `new Function` escape hatch in `DatabaseMigrationService`:
+
+```typescript
+const { up, config } = await (new Function(
+  'return import("migrate-mongo")',
+)() as Promise<typeof import('migrate-mongo')>);
+```
+
+The import string inside `new Function(...)` is invisible to webpack's AST parser so webpack cannot rewrite it to `require()`. Node.js executes it as a native ESM dynamic import at runtime, resolving named exports directly from the ESM module.
+
+---
+
+### Issue 9 — migrate-mongo could not find migrations directory in container
+
+**Symptom**: history-service crashed with `Error: migrations directory does not exist: /app/migrations`.
+
+**Root cause**: Two problems together: (1) no runtime config was passed to migrate-mongo so it defaulted to `./migrations` relative to CWD (`/app`); (2) the migrations `.js` file at `src/migrations/` was not included in the webpack build output — only `./src/assets` was listed as an asset.
+
+**Fix**: Added the migrations directory to webpack assets so it is copied to `dist/migrations/` in the container:
+
+```javascript
+{ input: "./src/migrations", glob: "**/*", output: "./migrations" }
+```
+
+Added `config.set()` before calling `up()` so migrate-mongo looks in the correct runtime path:
+
+```typescript
+config.set({
+  migrationsDir: join(__dirname, 'migrations'), // resolves to /app/dist/migrations
+  changelogCollectionName: 'migrations_changelog',
+  migrationFileExtension: '.js',
+});
+```
+
+---
+
+### Issue 10 — TypeORM migration glob unreachable in webpack bundle
+
+**Symptom**: auth-service crashed with `error: relation "users" does not exist`. Same pattern in suggestion-service and favorite-service.
+
+**Root cause**: All three PostgreSQL services had `migrations: [__dirname + '/migrations/*.js']`. This glob expects separate compiled `.js` files on disk at `/app/dist/migrations/`. Webpack bundles everything — including migration classes — into a single `main.js`, so no separate migration files exist at runtime and TypeORM ran nothing.
+
+**Fix**: Replaced the glob with direct class imports in all three `app.module.ts` files so the migration classes are bundled into `main.js` and passed as live references:
+
+```typescript
+import { InitialSchema1783082720307 } from './migrations/1783082720307-InitialSchema';
+migrations: [InitialSchema1783082720307],
+```
+
+---
+
+### Issue 11 — `UserSuggestionCategoryEntity.mediaType` unsupported type in PostgreSQL
+
+**Symptom**: suggestion-service failed to start — `DataTypeNotSupportedError: Data type "Object" in "UserSuggestionCategoryEntity.mediaType" is not supported by "postgres" database`.
+
+**Root cause**: `mediaType` was typed as `CategoryType` — a TypeScript union (`Category.FILM | Category.BOOK | Category.GAME | Category.SONG`). Union types are erased at runtime; TypeORM's reflection metadata sees `Object` and cannot map it to a PostgreSQL column type.
+
+**Fix**: Added an explicit column type to the decorator:
+
+```typescript
+@Column({ type: 'enum', enum: Category })
+mediaType: CategoryType;
+```
+
 ---
 
 ## Verification Checklist
@@ -286,7 +366,7 @@ Also updated the migration snippet in the plan file.
 | 9 — Document workflow            | 30 min        | ✅           | `MIGRATIONS.md` written covering day-to-day use, rollback, ENUM special case                                          |
 | 10 — MongoDB migrations          | 1 hour        | ✅ + extra   | Two migrate-mongo issues: deprecated driver options + `collMod` on non-existent collection                            |
 | 11 — Redis config                | 20 min        | ✅           | DB slots and `connectionTimeout` already done inline during earlier steps; docker-compose `maxmemory` added last      |
-| **Total**                        | **~7 hours**  | **12 hours** | Some unplanned work. Overall plan estimated 2–3 days — actual work was 1.5 days                                       |
+| **Total**                        | **~7 hours**  | **16 hours** | Some unplanned work + fixes. Overall plan estimated 2–3 days — actual work was 2 days                                 |
 
 **Unplanned work:**
 
@@ -332,6 +412,13 @@ Also updated the migration snippet in the plan file.
 | `infrastructure/docker-compose.yml`                                                    | Redis: `--maxmemory 256mb --maxmemory-policy allkeys-lru`; password via env var                        |
 | `MIGRATIONS.md`                                                                        | Created — migration workflow documentation                                                             |
 | `PHASE-1.1-DATABASE-MIGRATIONS.md`                                                     | Corrected 4 inaccuracies found post-implementation                                                     |
+| `package.json`                                                                         | Moved `migrate-mongo` from `devDependencies` → `dependencies` (Issue 7)                                |
+| `apps/history-service/src/database/database-migration.service.ts`                      | `new Function` ESM escape hatch + `config.set()` with runtime migrations path (Issues 8, 9)            |
+| `apps/history-service/webpack.config.js`                                               | Added migrations directory as webpack asset (Issue 9)                                                  |
+| `apps/auth-service/src/app.module.ts`                                                  | Replaced migrations glob with direct class import (Issue 10)                                           |
+| `apps/suggestion-service/src/app.module.ts`                                            | Replaced migrations glob with direct class import (Issue 10)                                           |
+| `apps/favorite-service/src/app.module.ts`                                              | Replaced migrations glob with direct class import (Issue 10)                                           |
+| `apps/suggestion-service/src/suggestion/entities/user-suggestion-categories.entity.ts` | Added `{ type: 'enum', enum: Category }` to `mediaType` column (Issue 11)                              |
 
 ---
 

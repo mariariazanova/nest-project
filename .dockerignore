@@ -1,0 +1,35 @@
+# Dependencies - installed fresh in Docker
+node_modules
+
+# Build outputs
+dist
+.nx/cache
+
+# Development files
+.git
+.gitignore
+.github
+*.md
+*.log
+
+# Test files
+coverage
+**/*.spec.ts
+**/*.test.ts
+**/*.e2e.ts
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Docker files themselves
+**/Dockerfile*
+**/.dockerignore
+docker-compose*.yml

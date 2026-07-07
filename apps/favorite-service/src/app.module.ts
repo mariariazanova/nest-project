@@ -8,6 +8,7 @@ import { FavoriteModule } from './favorite/favorite.module';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { InitialSchema1783077978076 } from './migrations/1783077978076-InitialSchema';
 import { MetricsModule } from '@suggestify/backend/metrics';
 import { FavoriteEntity } from './favorite/entities/favorite.entity';
 
@@ -33,7 +34,7 @@ import { FavoriteEntity } from './favorite/entities/favorite.entity';
         entities: [FavoriteEntity],
         synchronize: false,
         migrationsRun: true,
-        migrations: [__dirname + '/migrations/*.js'],
+        migrations: [InitialSchema1783077978076],
         logging: config.get<string>('NODE_ENV') === 'development',
         ssl:
           config.get<string>('NODE_ENV') === 'production'

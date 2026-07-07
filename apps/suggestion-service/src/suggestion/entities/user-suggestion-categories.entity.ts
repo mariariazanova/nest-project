@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { UserSuggestionEntity } from './user-suggestions.entity';
 import { CategoryType } from '../interfaces/category';
+import { Category } from '../enums/category';
 
 @Entity('user_suggestion_categories')
 export class UserSuggestionCategoryEntity {
@@ -23,7 +24,7 @@ export class UserSuggestionCategoryEntity {
   userSuggestion: UserSuggestionEntity;
 
   @Index()
-  @Column()
+  @Column({ type: 'enum', enum: Category })
   mediaType: CategoryType;
 
   @Index()

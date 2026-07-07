@@ -8,6 +8,7 @@ import { SuggestionModule } from './suggestion/suggestion.module';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
+import { InitialSchema1783077978077 } from './migrations/1783077978077-InitialSchema';
 import { MetricsModule } from '@suggestify/backend/metrics';
 import { BookEntity } from './suggestion/entities/book.entity';
 import { FilmEntity } from './suggestion/entities/film.entity';
@@ -51,7 +52,7 @@ import { UserSuggestionCategoryEntity } from './suggestion/entities/user-suggest
         ],
         synchronize: false,
         migrationsRun: true,
-        migrations: [__dirname + '/migrations/*.js'],
+        migrations: [InitialSchema1783077978077],
         logging: config.get<string>('NODE_ENV') === 'development',
         ssl:
           config.get<string>('NODE_ENV') === 'production'

@@ -14,6 +14,7 @@ import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { MetricsModule } from '@suggestify/backend/metrics';
 import { UserEntity } from './users/entities/user.entity';
+import { InitialSchema1783082720307 } from './migrations/1783082720307-InitialSchema';
 
 @Module({
   imports: [
@@ -37,7 +38,7 @@ import { UserEntity } from './users/entities/user.entity';
         entities: [UserEntity],
         synchronize: false,
         migrationsRun: true,
-        migrations: [__dirname + '/migrations/*.js'],
+        migrations: [InitialSchema1783082720307],
         logging: config.get<string>('NODE_ENV') === 'development',
         ssl:
           config.get<string>('NODE_ENV') === 'production'
