@@ -8,7 +8,7 @@ Replace the NestJS built-in logger with **Pino** across all five services and in
 
 ✅ **In Scope:**
 
-- Install `nestjs-pino`, `@nestjs/cls`, and supporting packages
+- Install `nestjs-pino`, `nestjs-cls`, and supporting packages
 - Create `libs/backend/logger` shared library (mirrors existing `libs/backend/consul`, `metrics`, etc.)
 - `LoggerModule.forRoot()` — configures Pino globally per service
 - `CorrelationMiddleware` — generates/extracts `x-correlation-id`, stores in CLS
@@ -28,15 +28,15 @@ Replace the NestJS built-in logger with **Pino** across all five services and in
 
 ## Configuration Decisions
 
-| Decision                | Choice                                                        | Reason                                                                                           |
-| ----------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Logger library          | **Pino** via `nestjs-pino`                                    | JSON by default, ~5× faster than Winston, first-class NestJS integration                         |
-| Request context         | **`@nestjs/cls`**                                             | Official NestJS CLS — propagates correlation ID without threading it through every function call |
-| Correlation ID format   | **UUID v4**                                                   | Standard, collision-free, widely recognised                                                      |
-| Header name             | **`x-correlation-id`**                                        | Industry convention; already reserved in CORS `allowedHeaders`                                   |
-| Dev formatting          | **`pino-pretty`**                                             | Human-readable coloured output locally; stripped in production                                   |
-| Sensitive field masking | `authorization`, `password`, `cookie` redacted in serializers | Phase 1.3 will add request body masking                                                          |
-| Lib location            | `libs/backend/logger`                                         | Follows existing `libs/backend/*` pattern                                                        |
+| Decision                | Choice                                                        | Reason                                                                                                  |
+| ----------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Logger library          | **Pino** via `nestjs-pino`                                    | JSON by default, ~5× faster than Winston, first-class NestJS integration                                |
+| Request context         | **`nestjs-cls`**                                              | Continuation-Local Storage — propagates correlation ID without threading it through every function call |
+| Correlation ID format   | **UUID v4**                                                   | Standard, collision-free, widely recognised                                                             |
+| Header name             | **`x-correlation-id`**                                        | Industry convention; already reserved in CORS `allowedHeaders`                                          |
+| Dev formatting          | **`pino-pretty`**                                             | Human-readable coloured output locally; stripped in production                                          |
+| Sensitive field masking | `authorization`, `password`, `cookie` redacted in serializers | Phase 1.3 will add request body masking                                                                 |
+| Lib location            | `libs/backend/logger`                                         | Follows existing `libs/backend/*` pattern                                                               |
 
 ## Target Log Format
 
@@ -86,17 +86,17 @@ libs/backend/logger/
 ### Step 1: Install Logging Dependencies (20 min)
 
 ```bash
-npm install nestjs-pino pino-http @nestjs/cls uuid
+npm install nestjs-pino pino-http nestjs-cls uuid
 npm install --save-dev pino-pretty @types/uuid
 ```
 
-| Package       | Role                                                                     |
-| ------------- | ------------------------------------------------------------------------ |
-| `nestjs-pino` | NestJS wrapper for Pino — provides `Logger` implementing `LoggerService` |
-| `pino-http`   | HTTP request logging integration (used internally by `nestjs-pino`)      |
-| `@nestjs/cls` | Continuation-Local Storage — stores correlation ID in request scope      |
-| `uuid`        | UUID v4 generation for correlation IDs                                   |
-| `pino-pretty` | Dev-only formatter (devDependency)                                       |
+| Package       | Role                                                                                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `nestjs-pino` | NestJS wrapper for Pino — provides `Logger` implementing `LoggerService`                                         |
+| `pino-http`   | HTTP request logging integration (used internally by `nestjs-pino`)                                              |
+| `nestjs-cls`  | Continuation-Local Storage — stores correlation ID in request scope (package is `nestjs-cls`, not `@nestjs/cls`) |
+| `uuid`        | UUID v4 generation for correlation IDs                                                                           |
+| `pino-pretty` | Dev-only formatter (devDependency)                                                                               |
 
 ### Step 2: Scaffold `libs/backend/logger` (30 min)
 
@@ -167,7 +167,7 @@ export interface LoggerModuleOptions {
 
 ```typescript
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { ClsService } from '@nestjs/cls';
+import { ClsService } from 'nestjs-cls';
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -209,7 +209,7 @@ import {
   NestModule,
 } from '@nestjs/common';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
-import { ClsModule, ClsService } from '@nestjs/cls';
+import { ClsModule, ClsService } from 'nestjs-cls';
 import {
   CorrelationMiddleware,
   CORRELATION_ID_KEY,
@@ -383,7 +383,7 @@ const headers = {
 };
 ```
 
-Import `ClsService` from `@nestjs/cls` and `CORRELATION_ID_KEY` from `@suggestify/backend/logger`.
+Import `ClsService` from `nestjs-cls` and `CORRELATION_ID_KEY` from `@suggestify/backend/logger`.
 
 This ensures every proxied request to auth-service, suggestion-service, history-service, and favorite-service carries the same correlation ID as the original inbound request.
 
@@ -653,25 +653,25 @@ The services fall back to NestJS built-in logging; no data is lost and no databa
 
 ## Files to Modify
 
-| File                                                           | Change                                                                                                                     |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `package.json`                                                 | Add `nestjs-pino`, `pino-http`, `@nestjs/cls`, `uuid` to `dependencies`; `pino-pretty`, `@types/uuid` to `devDependencies` |
-| `tsconfig.base.json`                                           | Add `@suggestify/backend/logger` path mapping                                                                              |
-| `apps/api-gateway/src/app.module.ts`                           | Import `LoggerModule.forRoot`, remove `LoggingMiddleware`                                                                  |
-| `apps/api-gateway/src/main.ts`                                 | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                      |
-| `apps/api-gateway/src/proxy/proxy.service.ts`                  | Inject `ClsService`, forward `x-correlation-id` header                                                                     |
-| `apps/api-gateway/src/middleware/auth.middleware.ts`           | Inject `ClsService`, include `correlationId` in `validate_token` payload                                                   |
-| `apps/auth-service/src/auth/auth.controller.ts`                | Wrap `validate_token` handler in `cls.run()`, extract `correlationId` from payload                                         |
-| `apps/suggestion-service/src/suggestion/suggestion.service.ts` | Include `correlationId` in `suggestion_created` emit payload                                                               |
-| `apps/history-service/src/history/history.controller.ts`       | Wrap `handleSuggestionCreated` in `cls.run()`, extract `correlationId` from payload                                        |
-| `apps/auth-service/src/app.module.ts`                          | Import `LoggerModule.forRoot`                                                                                              |
-| `apps/auth-service/src/main.ts`                                | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                      |
-| `apps/suggestion-service/src/app.module.ts`                    | Import `LoggerModule.forRoot`                                                                                              |
-| `apps/suggestion-service/src/main.ts`                          | Remove dead `suggestion_queue` transport; `bufferLogs: true` + `app.useLogger(app.get(Logger))`                            |
-| `apps/history-service/src/app.module.ts`                       | Import `LoggerModule.forRoot`                                                                                              |
-| `apps/history-service/src/main.ts`                             | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                      |
-| `apps/favorite-service/src/app.module.ts`                      | Import `LoggerModule.forRoot`                                                                                              |
-| `apps/favorite-service/src/main.ts`                            | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                      |
+| File                                                           | Change                                                                                                                    |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `package.json`                                                 | Add `nestjs-pino`, `pino-http`, `nestjs-cls`, `uuid` to `dependencies`; `pino-pretty`, `@types/uuid` to `devDependencies` |
+| `tsconfig.base.json`                                           | Add `@suggestify/backend/logger` path mapping                                                                             |
+| `apps/api-gateway/src/app.module.ts`                           | Import `LoggerModule.forRoot`, remove `LoggingMiddleware`                                                                 |
+| `apps/api-gateway/src/main.ts`                                 | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                     |
+| `apps/api-gateway/src/proxy/proxy.service.ts`                  | Inject `ClsService`, forward `x-correlation-id` header                                                                    |
+| `apps/api-gateway/src/middleware/auth.middleware.ts`           | Inject `ClsService`, include `correlationId` in `validate_token` payload                                                  |
+| `apps/auth-service/src/auth/auth.controller.ts`                | Wrap `validate_token` handler in `cls.run()`, extract `correlationId` from payload                                        |
+| `apps/suggestion-service/src/suggestion/suggestion.service.ts` | Include `correlationId` in `suggestion_created` emit payload                                                              |
+| `apps/history-service/src/history/history.controller.ts`       | Wrap `handleSuggestionCreated` in `cls.run()`, extract `correlationId` from payload                                       |
+| `apps/auth-service/src/app.module.ts`                          | Import `LoggerModule.forRoot`                                                                                             |
+| `apps/auth-service/src/main.ts`                                | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                     |
+| `apps/suggestion-service/src/app.module.ts`                    | Import `LoggerModule.forRoot`                                                                                             |
+| `apps/suggestion-service/src/main.ts`                          | Remove dead `suggestion_queue` transport; `bufferLogs: true` + `app.useLogger(app.get(Logger))`                           |
+| `apps/history-service/src/app.module.ts`                       | Import `LoggerModule.forRoot`                                                                                             |
+| `apps/history-service/src/main.ts`                             | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                     |
+| `apps/favorite-service/src/app.module.ts`                      | Import `LoggerModule.forRoot`                                                                                             |
+| `apps/favorite-service/src/main.ts`                            | `bufferLogs: true` + `app.useLogger(app.get(Logger))`                                                                     |
 
 ## Files to Delete
 

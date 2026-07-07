@@ -20,7 +20,8 @@
       "@suggestify/backend/circuit-breaker": [
         "./libs/backend/circuit-breaker/src/index.ts"
       ],
-      "@suggestify/backend/health": ["./libs/backend/health/src/index.ts"]
+      "@suggestify/backend/health": ["./libs/backend/health/src/index.ts"],
+      "@suggestify/backend/logger": ["./libs/backend/logger/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
