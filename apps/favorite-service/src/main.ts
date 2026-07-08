@@ -1,13 +1,14 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { ConsulService } from '@suggestify/backend/consul';
 
 async function bootstrap() {
-  const logger = new Logger('FavoriteService');
   const PORT = process.env.PORT || 3004;
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,8 +27,6 @@ async function bootstrap() {
 
   const consulService = app.get(ConsulService);
   await consulService.registerService();
-
-  logger.log(`Favorite Service running on port ${PORT}`);
 }
 
 bootstrap();

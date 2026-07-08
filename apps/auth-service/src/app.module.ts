@@ -13,6 +13,7 @@ import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { MetricsModule } from '@suggestify/backend/metrics';
+import { LoggerModule } from '@suggestify/backend/logger';
 import { UserEntity } from './users/entities/user.entity';
 import { InitialSchema1783082720307 } from './migrations/1783082720307-InitialSchema';
 
@@ -95,6 +96,7 @@ import { InitialSchema1783082720307 } from './migrations/1783082720307-InitialSc
     }),
     CircuitBreakerModule,
     MetricsModule,
+    LoggerModule.forRoot({ serviceName: 'auth-service' }),
   ],
 })
 export class AppModule {}

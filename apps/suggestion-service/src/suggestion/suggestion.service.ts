@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { ClientProxy } from '@nestjs/microservices';
+import { ClsService } from 'nestjs-cls';
+import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
 
 import { FilterItemsDto } from './dto/filter-items.dto';
 import { BookEntity } from './entities/book.entity';
@@ -19,7 +21,6 @@ import { UserSuggestionCategoryEntity } from './entities/user-suggestion-categor
 export class SuggestionService {
   private readonly logger = new Logger(SuggestionService.name);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private categoryRepoMap: Record<Category, Repository<any>>;
 
   constructor(
@@ -40,6 +41,8 @@ export class SuggestionService {
 
     @Inject('HISTORY_SERVICE')
     private historyClient: ClientProxy,
+
+    private readonly cls: ClsService,
   ) {
     this.categoryRepoMap = {
       [Category.BOOK]: this.bookRepo,
@@ -49,8 +52,13 @@ export class SuggestionService {
     };
   }
 
-  async findManyByProperty(dto: FilterItemsDto, userId: string): Promise<Suggestion> {
-    this.logger.log(`Finding suggestions - userId: ${userId}, category: ${dto.criteria?.category}`);
+  async findManyByProperty(
+    dto: FilterItemsDto,
+    userId: string,
+  ): Promise<Suggestion> {
+    this.logger.log(
+      `Finding suggestions - userId: ${userId}, category: ${dto.criteria?.category}`,
+    );
 
     const { category, mood, genre, event } = dto.criteria;
     const repo = this.categoryRepoMap[category];
@@ -117,6 +125,7 @@ export class SuggestionService {
               category: category,
             })),
             timestamp: suggestion.recommendedAt.toISOString(),
+            correlationId: this.cls.get(CORRELATION_ID_KEY),
           })
           .subscribe({
             next: () => this.logger.log('Event emitted successfully'),
@@ -131,7 +140,9 @@ export class SuggestionService {
   }
 
   async findOne(category: string, id: string) {
-    this.logger.log(`Finding one suggestion - category: ${category}, id: ${id}`);
+    this.logger.log(
+      `Finding one suggestion - category: ${category}, id: ${id}`,
+    );
 
     const repo = this.categoryRepoMap[category];
 
@@ -169,7 +180,9 @@ export class SuggestionService {
     return item;
   }
 
-  async enrichSuggestionWithMediaDetails(suggestion: UserSuggestionEntity): Promise<Suggestion> {
+  async enrichSuggestionWithMediaDetails(
+    suggestion: UserSuggestionEntity,
+  ): Promise<Suggestion> {
     const items = await this.extractSuggestionMediaDetails(suggestion);
 
     return <Suggestion>(<unknown>{
@@ -179,7 +192,9 @@ export class SuggestionService {
     });
   }
 
-  private async extractSuggestionMediaDetails(suggestion: UserSuggestionEntity): Promise<Item[]> {
+  private async extractSuggestionMediaDetails(
+    suggestion: UserSuggestionEntity,
+  ): Promise<Item[]> {
     const items: Item[] = [];
 
     for (const category of suggestion.categories) {
@@ -188,25 +203,21 @@ export class SuggestionService {
       switch (category.mediaType) {
         case Category.BOOK:
           mediaItem = await this.bookRepo.findOne({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             where: { id: category.mediaId } as any,
           });
           break;
         case Category.FIlM:
           mediaItem = await this.filmRepo.findOne({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             where: { id: category.mediaId } as any,
           });
           break;
         case Category.GAME:
           mediaItem = await this.gameRepo.findOne({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             where: { id: category.mediaId } as any,
           });
           break;
         case Category.SONG:
           mediaItem = await this.songRepo.findOne({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             where: { id: category.mediaId } as any,
           });
           break;

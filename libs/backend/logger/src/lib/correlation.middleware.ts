@@ -14,9 +14,10 @@ export class CorrelationMiddleware implements NestMiddleware {
     const correlationId =
       (req.headers[CORRELATION_ID_HEADER] as string) || uuidv4();
 
-    this.cls.set(CORRELATION_ID_KEY, correlationId);
-    res.setHeader(CORRELATION_ID_HEADER, correlationId);
-
-    next();
+    this.cls.run(() => {
+      this.cls.set(CORRELATION_ID_KEY, correlationId);
+      res.setHeader(CORRELATION_ID_HEADER, correlationId);
+      next();
+    });
   }
 }

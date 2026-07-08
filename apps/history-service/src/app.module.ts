@@ -9,6 +9,7 @@ import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { MetricsModule } from '@suggestify/backend/metrics';
+import { LoggerModule } from '@suggestify/backend/logger';
 import { DatabaseMigrationService } from './database/database-migration.service';
 
 @Module({
@@ -56,6 +57,7 @@ import { DatabaseMigrationService } from './database/database-migration.service'
     }),
     CircuitBreakerModule,
     MetricsModule,
+    LoggerModule.forRoot({ serviceName: 'history-service' }),
   ],
   providers: [DatabaseMigrationService],
 })

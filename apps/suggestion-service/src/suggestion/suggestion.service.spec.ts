@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
+import { ClsService } from 'nestjs-cls';
 import { SuggestionService } from './suggestion.service';
 import { BookEntity } from './entities/book.entity';
 import { FilmEntity } from './entities/film.entity';
@@ -23,7 +24,6 @@ describe('SuggestionService', () => {
   let songRepo: Repository<SongEntity>;
   let historyClient: ClientProxy;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockQueryBuilder: any;
 
   const createMockQueryBuilder = () => ({
@@ -79,6 +79,14 @@ describe('SuggestionService', () => {
           provide: 'HISTORY_SERVICE',
           useValue: mockHistoryClient,
         },
+        {
+          provide: ClsService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            run: jest.fn((fn: () => unknown) => fn()),
+          },
+        },
       ],
     }).compile();
 
@@ -90,10 +98,18 @@ describe('SuggestionService', () => {
     historyClient = module.get('HISTORY_SERVICE');
 
     // Setup createQueryBuilder to return our mock
-    (bookRepo.createQueryBuilder as jest.Mock).mockReturnValue(mockQueryBuilder);
-    (filmRepo.createQueryBuilder as jest.Mock).mockReturnValue(mockQueryBuilder);
-    (gameRepo.createQueryBuilder as jest.Mock).mockReturnValue(mockQueryBuilder);
-    (songRepo.createQueryBuilder as jest.Mock).mockReturnValue(mockQueryBuilder);
+    (bookRepo.createQueryBuilder as jest.Mock).mockReturnValue(
+      mockQueryBuilder,
+    );
+    (filmRepo.createQueryBuilder as jest.Mock).mockReturnValue(
+      mockQueryBuilder,
+    );
+    (gameRepo.createQueryBuilder as jest.Mock).mockReturnValue(
+      mockQueryBuilder,
+    );
+    (songRepo.createQueryBuilder as jest.Mock).mockReturnValue(
+      mockQueryBuilder,
+    );
 
     jest.clearAllMocks();
   });
@@ -137,18 +153,36 @@ describe('SuggestionService', () => {
       const result = await service.findManyByProperty(mockDto, mockUserId);
 
       expect(bookRepo.createQueryBuilder).toHaveBeenCalledWith('book');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('book.moods', 'mood');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('book.genres', 'genre');
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('book.events', 'event');
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('mood.name = :mood', {
-        mood: 'happy',
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('genre.name = :genre', {
-        genre: 'fiction',
-      });
-      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('event.name = :event', {
-        event: 'party',
-      });
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'book.moods',
+        'mood',
+      );
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'book.genres',
+        'genre',
+      );
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'book.events',
+        'event',
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'mood.name = :mood',
+        {
+          mood: 'happy',
+        },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'genre.name = :genre',
+        {
+          genre: 'fiction',
+        },
+      );
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'event.name = :event',
+        {
+          event: 'party',
+        },
+      );
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
       expect(result.items).toHaveLength(2);
       expect(bookRepo.findOne).toHaveBeenCalledTimes(2);
@@ -176,12 +210,12 @@ describe('SuggestionService', () => {
         },
       };
 
-      await expect(service.findManyByProperty(invalidDto, mockUserId)).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.findManyByProperty(invalidDto, mockUserId)).rejects.toThrow(
-        'Category invalid not found',
-      );
+      await expect(
+        service.findManyByProperty(invalidDto, mockUserId),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findManyByProperty(invalidDto, mockUserId),
+      ).rejects.toThrow('Category invalid not found');
     });
 
     it('should emit event to history service on success', async () => {
@@ -210,7 +244,9 @@ describe('SuggestionService', () => {
     it('should handle event emission error gracefully', async () => {
       mockQueryBuilder.getMany.mockResolvedValue(mockBooks);
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockHistoryClient.emit.mockReturnValue(throwError(() => new Error('Event emission failed')));
+      mockHistoryClient.emit.mockReturnValue(
+        throwError(() => new Error('Event emission failed')),
+      );
 
       // Should not throw despite event emission failure
       const result = await service.findManyByProperty(mockDto, mockUserId);
@@ -290,16 +326,24 @@ describe('SuggestionService', () => {
     });
 
     it('should throw NotFoundException for invalid category', async () => {
-      await expect(service.findOne('invalid', '123')).rejects.toThrow(NotFoundException);
-      await expect(service.findOne('invalid', '123')).rejects.toThrow('Category invalid not found');
+      await expect(service.findOne('invalid', '123')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findOne('invalid', '123')).rejects.toThrow(
+        'Category invalid not found',
+      );
     });
 
     it('should throw NotFoundException when item not found', async () => {
       (bookRepo.find as jest.Mock).mockResolvedValue([]);
       (bookRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      await expect(service.findOne(Category.BOOK, '999')).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(Category.BOOK, '999')).rejects.toThrow('Item not found');
+      await expect(service.findOne(Category.BOOK, '999')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findOne(Category.BOOK, '999')).rejects.toThrow(
+        'Item not found',
+      );
     });
 
     it('should work with film category', async () => {
@@ -352,7 +396,8 @@ describe('SuggestionService', () => {
       (bookRepo.findOne as jest.Mock).mockResolvedValue(mockBook);
       (filmRepo.findOne as jest.Mock).mockResolvedValue(mockFilm);
 
-      const result = await service.enrichSuggestionWithMediaDetails(mockSuggestion);
+      const result =
+        await service.enrichSuggestionWithMediaDetails(mockSuggestion);
 
       expect(result.id).toBe('user-123');
       expect(result.type).toBe(Category.BOOK);
@@ -375,7 +420,8 @@ describe('SuggestionService', () => {
       (bookRepo.findOne as jest.Mock).mockResolvedValue(mockBook);
       (filmRepo.findOne as jest.Mock).mockResolvedValue(null);
 
-      const result = await service.enrichSuggestionWithMediaDetails(mockSuggestion);
+      const result =
+        await service.enrichSuggestionWithMediaDetails(mockSuggestion);
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0]).toEqual(mockBook);

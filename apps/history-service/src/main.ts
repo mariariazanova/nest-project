@@ -1,14 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
 import { ConsulService } from '@suggestify/backend/consul';
 
 async function bootstrap() {
-  const logger = new Logger('HistoryService');
   const PORT = process.env.PORT || 3003;
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -39,9 +40,6 @@ async function bootstrap() {
 
   const consulService = app.get(ConsulService);
   await consulService.registerService();
-
-  logger.log(`History Service running on port ${PORT}`);
-  logger.log(`RabbitMQ microservice started, listening to history_queue`);
 }
 
 bootstrap();

@@ -1,11 +1,19 @@
-import { Injectable, HttpException, HttpStatus, Inject, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Request, Response } from 'express';
 import { firstValueFrom } from 'rxjs';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { ClsService } from 'nestjs-cls';
 import { ConsulService } from '@suggestify/backend/consul';
 import { CircuitBreakerService } from '@suggestify/backend/circuit-breaker';
+import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
 
 @Injectable()
 export class ProxyService {
@@ -15,12 +23,15 @@ export class ProxyService {
     private readonly httpService: HttpService,
     private readonly consulService: ConsulService,
     private readonly circuitBreaker: CircuitBreakerService,
+    private readonly cls: ClsService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async forward(req: Request, res: Response, serviceName: string) {
     try {
-      this.logger.debug(`Forward request with body: ${JSON.stringify(req.body)}`);
+      this.logger.debug(
+        `Forward request with body: ${JSON.stringify(req.body)}`,
+      );
 
       // Discover service URL
       const serviceUrl = await this.discoverServiceUrl(serviceName);
@@ -39,6 +50,7 @@ export class ProxyService {
         ...this.filterHeaders(req.headers),
         'cache-control': 'no-cache, no-store, must-revalidate',
         pragma: 'no-cache',
+        'x-correlation-id': this.cls.get(CORRELATION_ID_KEY) ?? '',
       };
 
       if (req['user'] && req['user']['userId']) {
@@ -61,7 +73,9 @@ export class ProxyService {
               }),
             );
           } catch (error) {
-            const err = error as { response?: { status: number; data: unknown } };
+            const err = error as {
+              response?: { status: number; data: unknown };
+            };
             // If 4xx - don't throw error, only return response
             if (err.response?.status >= 400 && err.response?.status < 500) {
               this.logger.debug(
@@ -78,7 +92,9 @@ export class ProxyService {
           }
         },
         () => {
-          this.logger.error('Service temporarily unavailable (circuit breaker triggered)');
+          this.logger.error(
+            'Service temporarily unavailable (circuit breaker triggered)',
+          );
           throw new HttpException(
             'Service temporarily unavailable',
             HttpStatus.SERVICE_UNAVAILABLE,
@@ -86,7 +102,9 @@ export class ProxyService {
         },
       );
 
-      this.logger.debug(`Received response from target service: ${JSON.stringify(response.data)}`);
+      this.logger.debug(
+        `Received response from target service: ${JSON.stringify(response.data)}`,
+      );
 
       // Forward response
       res.status(response.status).json({
@@ -99,8 +117,12 @@ export class ProxyService {
     }
   }
 
-  private async discoverServiceUrl(serviceName: string): Promise<string | null> {
-    const cached = await this.cacheManager.get<string>(`service:${serviceName}`);
+  private async discoverServiceUrl(
+    serviceName: string,
+  ): Promise<string | null> {
+    const cached = await this.cacheManager.get<string>(
+      `service:${serviceName}`,
+    );
 
     if (cached) {
       return cached;
@@ -164,7 +186,6 @@ export class ProxyService {
     return base;
   }
 
-   
   private filterHeaders(headers: any): any {
     const filtered = { ...headers };
 
@@ -174,7 +195,6 @@ export class ProxyService {
     return filtered;
   }
 
-   
   private handleError(error: any, res: Response) {
     this.logger.error('Proxy error:', error.message || error);
 

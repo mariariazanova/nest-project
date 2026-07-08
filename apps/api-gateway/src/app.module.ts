@@ -10,9 +10,9 @@ import { HealthModule } from '@suggestify/backend/health';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { MetricsModule } from '@suggestify/backend/metrics';
+import { LoggerModule } from '@suggestify/backend/logger';
 
 // Middleware
-import { LoggingMiddleware } from './middleware/logging.middleware';
 import { MetricsMiddleware } from './middleware/metrics.middleware';
 import { AuthMiddleware } from './middleware/auth.middleware';
 
@@ -69,10 +69,11 @@ import { GlobalClientsModule } from './clients/clients.module';
     }),
     CircuitBreakerModule,
     MetricsModule,
+    LoggerModule.forRoot({ serviceName: 'api-gateway' }),
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggingMiddleware, MetricsMiddleware, AuthMiddleware).forRoutes('*path');
+    consumer.apply(MetricsMiddleware, AuthMiddleware).forRoutes('*path');
   }
 }

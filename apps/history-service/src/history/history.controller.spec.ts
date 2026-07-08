@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ClsService } from 'nestjs-cls';
 import { HistoryController } from './history.controller';
 import { HistoryService } from './history.service';
 
@@ -68,6 +69,14 @@ describe('HistoryController', () => {
           provide: HistoryService,
           useValue: mockHistoryService,
         },
+        {
+          provide: ClsService,
+          useValue: {
+            run: jest.fn((fn: () => unknown) => fn()),
+            set: jest.fn(),
+            get: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -110,9 +119,13 @@ describe('HistoryController', () => {
     });
 
     it('should handle service errors', async () => {
-      mockHistoryService.getUserHistory.mockRejectedValue(new Error('Database error'));
+      mockHistoryService.getUserHistory.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(controller.getUserHistory('user-123')).rejects.toThrow('Database error');
+      await expect(controller.getUserHistory('user-123')).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -166,9 +179,13 @@ describe('HistoryController', () => {
     });
 
     it('should handle service errors', async () => {
-      mockHistoryService.getUserStats.mockRejectedValue(new Error('Aggregation error'));
+      mockHistoryService.getUserStats.mockRejectedValue(
+        new Error('Aggregation error'),
+      );
 
-      await expect(controller.getUserStats('user-123')).rejects.toThrow('Aggregation error');
+      await expect(controller.getUserStats('user-123')).rejects.toThrow(
+        'Aggregation error',
+      );
     });
   });
 
@@ -179,7 +196,10 @@ describe('HistoryController', () => {
       const result = await controller.getHistoryItem('history-123', 'user-123');
 
       expect(result).toEqual(mockHistoryItem);
-      expect(historyService.getHistoryItem).toHaveBeenCalledWith('history-123', 'user-123');
+      expect(historyService.getHistoryItem).toHaveBeenCalledWith(
+        'history-123',
+        'user-123',
+      );
       expect(historyService.getHistoryItem).toHaveBeenCalledTimes(1);
     });
 
@@ -188,15 +208,20 @@ describe('HistoryController', () => {
 
       await controller.getHistoryItem('history-456', 'user-789');
 
-      expect(historyService.getHistoryItem).toHaveBeenCalledWith('history-456', 'user-789');
+      expect(historyService.getHistoryItem).toHaveBeenCalledWith(
+        'history-456',
+        'user-789',
+      );
     });
 
     it('should handle not found error', async () => {
-      mockHistoryService.getHistoryItem.mockRejectedValue(new Error('History item not found'));
-
-      await expect(controller.getHistoryItem('history-999', 'user-123')).rejects.toThrow(
-        'History item not found',
+      mockHistoryService.getHistoryItem.mockRejectedValue(
+        new Error('History item not found'),
       );
+
+      await expect(
+        controller.getHistoryItem('history-999', 'user-123'),
+      ).rejects.toThrow('History item not found');
     });
 
     it('should enforce user ownership through service', async () => {
@@ -204,15 +229,20 @@ describe('HistoryController', () => {
 
       await controller.getHistoryItem('history-123', 'wrong-user');
 
-      expect(historyService.getHistoryItem).toHaveBeenCalledWith('history-123', 'wrong-user');
+      expect(historyService.getHistoryItem).toHaveBeenCalledWith(
+        'history-123',
+        'wrong-user',
+      );
     });
 
     it('should handle service errors', async () => {
-      mockHistoryService.getHistoryItem.mockRejectedValue(new Error('Database error'));
-
-      await expect(controller.getHistoryItem('history-123', 'user-123')).rejects.toThrow(
-        'Database error',
+      mockHistoryService.getHistoryItem.mockRejectedValue(
+        new Error('Database error'),
       );
+
+      await expect(
+        controller.getHistoryItem('history-123', 'user-123'),
+      ).rejects.toThrow('Database error');
     });
   });
 
@@ -237,7 +267,9 @@ describe('HistoryController', () => {
       const result = await controller.handleSuggestionCreated(mockEventData);
 
       expect(result).toEqual(mockHistoryItem);
-      expect(historyService.createHistoryEntry).toHaveBeenCalledWith(mockEventData);
+      expect(historyService.createHistoryEntry).toHaveBeenCalledWith(
+        mockEventData,
+      );
       expect(historyService.createHistoryEntry).toHaveBeenCalledTimes(1);
     });
 
@@ -266,7 +298,9 @@ describe('HistoryController', () => {
 
       await controller.handleSuggestionCreated(minimalData);
 
-      expect(historyService.createHistoryEntry).toHaveBeenCalledWith(minimalData);
+      expect(historyService.createHistoryEntry).toHaveBeenCalledWith(
+        minimalData,
+      );
     });
 
     it('should handle event with multiple suggestions', async () => {
@@ -299,9 +333,9 @@ describe('HistoryController', () => {
         new Error('Failed to create history'),
       );
 
-      await expect(controller.handleSuggestionCreated(mockEventData)).rejects.toThrow(
-        'Failed to create history',
-      );
+      await expect(
+        controller.handleSuggestionCreated(mockEventData),
+      ).rejects.toThrow('Failed to create history');
     });
 
     it('should handle event with complex criteria', async () => {
@@ -340,7 +374,9 @@ describe('HistoryController', () => {
 
       await controller.getUserHistory('header-user-123');
 
-      expect(historyService.getUserHistory).toHaveBeenCalledWith('header-user-123');
+      expect(historyService.getUserHistory).toHaveBeenCalledWith(
+        'header-user-123',
+      );
     });
 
     it('should extract userId from X-User-Id header in getUserStats', async () => {
@@ -348,7 +384,9 @@ describe('HistoryController', () => {
 
       await controller.getUserStats('header-user-456');
 
-      expect(historyService.getUserStats).toHaveBeenCalledWith('header-user-456');
+      expect(historyService.getUserStats).toHaveBeenCalledWith(
+        'header-user-456',
+      );
     });
 
     it('should extract userId from X-User-Id header in getHistoryItem', async () => {
@@ -356,7 +394,10 @@ describe('HistoryController', () => {
 
       await controller.getHistoryItem('history-123', 'header-user-789');
 
-      expect(historyService.getHistoryItem).toHaveBeenCalledWith('history-123', 'header-user-789');
+      expect(historyService.getHistoryItem).toHaveBeenCalledWith(
+        'history-123',
+        'header-user-789',
+      );
     });
   });
 });

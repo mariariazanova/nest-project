@@ -8,6 +8,7 @@ module.exports = {
   transform: {
     '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
   },
+  transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {

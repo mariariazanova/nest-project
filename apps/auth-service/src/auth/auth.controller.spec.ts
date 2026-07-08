@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SignUpDto, LoginDto } from './dto';
@@ -22,6 +23,12 @@ describe('AuthController', () => {
     canActivate: jest.fn(() => true),
   };
 
+  const mockClsService = {
+    run: jest.fn((fn: () => unknown) => fn()),
+    set: jest.fn(),
+    get: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -29,6 +36,10 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: mockAuthService,
+        },
+        {
+          provide: ClsService,
+          useValue: mockClsService,
         },
       ],
     })
@@ -86,9 +97,13 @@ describe('AuthController', () => {
         password: 'Password123!',
       };
 
-      mockAuthService.signUp.mockRejectedValue(new Error('Username already exists'));
+      mockAuthService.signUp.mockRejectedValue(
+        new Error('Username already exists'),
+      );
 
-      await expect(controller.signUp(dto)).rejects.toThrow('Username already exists');
+      await expect(controller.signUp(dto)).rejects.toThrow(
+        'Username already exists',
+      );
       expect(authService.signUp).toHaveBeenCalledWith(dto);
     });
 
@@ -98,7 +113,9 @@ describe('AuthController', () => {
         password: '123',
       };
 
-      mockAuthService.signUp.mockRejectedValue(new Error('Password must be at least 6 characters'));
+      mockAuthService.signUp.mockRejectedValue(
+        new Error('Password must be at least 6 characters'),
+      );
 
       await expect(controller.signUp(dto)).rejects.toThrow(
         'Password must be at least 6 characters',
@@ -137,9 +154,13 @@ describe('AuthController', () => {
         password: 'wrongpassword',
       };
 
-      mockAuthService.login.mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      mockAuthService.login.mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
 
-      await expect(controller.login(dto)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.login(dto)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(authService.login).toHaveBeenCalledWith(dto);
     });
 
@@ -149,9 +170,13 @@ describe('AuthController', () => {
         password: 'Password123!',
       };
 
-      mockAuthService.login.mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      mockAuthService.login.mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
 
-      await expect(controller.login(dto)).rejects.toThrow('Invalid credentials');
+      await expect(controller.login(dto)).rejects.toThrow(
+        'Invalid credentials',
+      );
     });
 
     it('should handle empty credentials', async () => {
@@ -160,9 +185,13 @@ describe('AuthController', () => {
         password: '',
       };
 
-      mockAuthService.login.mockRejectedValue(new UnauthorizedException('Invalid credentials'));
+      mockAuthService.login.mockRejectedValue(
+        new UnauthorizedException('Invalid credentials'),
+      );
 
-      await expect(controller.login(dto)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.login(dto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -204,9 +233,13 @@ describe('AuthController', () => {
         },
       };
 
-      mockAuthService.logout.mockRejectedValue(new UnauthorizedException('Invalid token'));
+      mockAuthService.logout.mockRejectedValue(
+        new UnauthorizedException('Invalid token'),
+      );
 
-      await expect(controller.logout(mockRequest)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.logout(mockRequest)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(authService.logout).toHaveBeenCalledWith('invalid.token');
     });
 
@@ -267,9 +300,13 @@ describe('AuthController', () => {
         },
       };
 
-      mockAuthService.getProfile.mockRejectedValue(new UnauthorizedException('User not found'));
+      mockAuthService.getProfile.mockRejectedValue(
+        new UnauthorizedException('User not found'),
+      );
 
-      await expect(controller.getProfile(mockRequest)).rejects.toThrow('User not found');
+      await expect(controller.getProfile(mockRequest)).rejects.toThrow(
+        'User not found',
+      );
       expect(authService.getProfile).toHaveBeenCalledWith('nonexistent-uuid');
     });
 
@@ -309,7 +346,9 @@ describe('AuthController', () => {
 
       const result = await controller.validateToken(data);
 
-      expect(authService.validateToken).toHaveBeenCalledWith('valid.jwt.token.xyz');
+      expect(authService.validateToken).toHaveBeenCalledWith(
+        'valid.jwt.token.xyz',
+      );
       expect(authService.validateToken).toHaveBeenCalledTimes(1);
       expect(result.valid).toBe(true);
       expect(result.userId).toBe('user-uuid-999');
@@ -364,7 +403,9 @@ describe('AuthController', () => {
       const result = await controller.validateToken(data);
 
       expect(result.valid).toBe(false);
-      expect(authService.validateToken).toHaveBeenCalledWith('blacklisted.token');
+      expect(authService.validateToken).toHaveBeenCalledWith(
+        'blacklisted.token',
+      );
     });
 
     it('should handle empty token', async () => {
@@ -385,7 +426,6 @@ describe('AuthController', () => {
 
     it('should handle null token', async () => {
       const data = {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token: null as any,
       };
 
@@ -405,9 +445,13 @@ describe('AuthController', () => {
         token: 'problematic.token',
       };
 
-      mockAuthService.validateToken.mockRejectedValue(new Error('Validation service error'));
+      mockAuthService.validateToken.mockRejectedValue(
+        new Error('Validation service error'),
+      );
 
-      await expect(controller.validateToken(data)).rejects.toThrow('Validation service error');
+      await expect(controller.validateToken(data)).rejects.toThrow(
+        'Validation service error',
+      );
     });
   });
 

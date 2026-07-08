@@ -3,6 +3,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import { Request, Response, NextFunction } from 'express';
+import { ClsService } from 'nestjs-cls';
 import { AuthMiddleware } from './auth.middleware';
 
 describe('AuthMiddleware', () => {
@@ -27,6 +28,14 @@ describe('AuthMiddleware', () => {
           provide: 'AUTH_SERVICE',
           useValue: {
             send: jest.fn(),
+          },
+        },
+        {
+          provide: ClsService,
+          useValue: {
+            get: jest.fn().mockReturnValue(undefined),
+            set: jest.fn(),
+            run: jest.fn((fn: () => unknown) => fn()),
           },
         },
       ],
@@ -80,9 +89,9 @@ describe('AuthMiddleware', () => {
     it('should throw UnauthorizedException when no token provided', async () => {
       const req = { ...mockRequest, originalUrl: '/api/protected' };
 
-      await expect(middleware.use(req as Request, mockResponse, mockNext)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        middleware.use(req as Request, mockResponse, mockNext),
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -94,9 +103,9 @@ describe('AuthMiddleware', () => {
         headers: { authorization: 'InvalidFormat token123' },
       };
 
-      await expect(middleware.use(req as Request, mockResponse, mockNext)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        middleware.use(req as Request, mockResponse, mockNext),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when token is missing Bearer prefix', async () => {
@@ -106,9 +115,9 @@ describe('AuthMiddleware', () => {
         headers: { authorization: 'token123' },
       };
 
-      await expect(middleware.use(req as Request, mockResponse, mockNext)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        middleware.use(req as Request, mockResponse, mockNext),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should validate token and attach user to request', async () => {
@@ -126,13 +135,15 @@ describe('AuthMiddleware', () => {
 
       jest
         .spyOn(authClient, 'send')
-        .mockReturnValue(of(validationResult) as ReturnType<ClientProxy['send']>);
+        .mockReturnValue(
+          of(validationResult) as ReturnType<ClientProxy['send']>,
+        );
 
       await middleware.use(req as Request, mockResponse, mockNext);
 
       expect(authClient.send).toHaveBeenCalledWith(
         { cmd: 'validate_token' },
-        { token: 'valid-token-123' },
+        expect.objectContaining({ token: 'valid-token-123' }),
       );
       expect(req['user']).toEqual({
         userId: 'user123',
@@ -150,11 +161,13 @@ describe('AuthMiddleware', () => {
 
       jest
         .spyOn(authClient, 'send')
-        .mockReturnValue(of({ valid: false }) as ReturnType<ClientProxy['send']>);
+        .mockReturnValue(
+          of({ valid: false }) as ReturnType<ClientProxy['send']>,
+        );
 
-      await expect(middleware.use(req as Request, mockResponse, mockNext)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        middleware.use(req as Request, mockResponse, mockNext),
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -169,12 +182,14 @@ describe('AuthMiddleware', () => {
       jest
         .spyOn(authClient, 'send')
         .mockReturnValue(
-          throwError(() => new Error('Service unavailable')) as ReturnType<ClientProxy['send']>,
+          throwError(() => new Error('Service unavailable')) as ReturnType<
+            ClientProxy['send']
+          >,
         );
 
-      await expect(middleware.use(req as Request, mockResponse, mockNext)).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        middleware.use(req as Request, mockResponse, mockNext),
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(mockNext).not.toHaveBeenCalled();
     });
@@ -186,7 +201,6 @@ describe('AuthMiddleware', () => {
         headers: { authorization: 'Bearer valid-token' },
       } as Request;
 
-       
       const token = (middleware as any).extractToken(req);
 
       expect(token).toBe('valid-token');
@@ -195,7 +209,6 @@ describe('AuthMiddleware', () => {
     it('should return null when no authorization header', () => {
       const req = { headers: {} } as Request;
 
-       
       const token = (middleware as any).extractToken(req);
 
       expect(token).toBeNull();
@@ -206,7 +219,6 @@ describe('AuthMiddleware', () => {
         headers: { authorization: 'Basic credentials' },
       } as Request;
 
-       
       const token = (middleware as any).extractToken(req);
 
       expect(token).toBeNull();
@@ -215,10 +227,14 @@ describe('AuthMiddleware', () => {
 
   describe('isPublicRoute', () => {
     it('should identify public routes correctly', () => {
-      const publicPaths = ['/v1/auth/sessions', '/v1/auth/users', '/v1/health', '/v1/metrics'];
+      const publicPaths = [
+        '/v1/auth/sessions',
+        '/v1/auth/users',
+        '/v1/health',
+        '/v1/metrics',
+      ];
 
       publicPaths.forEach((path) => {
-         
         expect((middleware as any).isPublicRoute(path)).toBe(true);
       });
     });
@@ -232,7 +248,6 @@ describe('AuthMiddleware', () => {
       ];
 
       protectedPaths.forEach((path) => {
-         
         expect((middleware as any).isPublicRoute(path)).toBe(false);
       });
     });

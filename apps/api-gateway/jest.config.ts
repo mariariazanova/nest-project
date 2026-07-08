@@ -12,6 +12,9 @@ export default {
   },
   testMatch: ['**/*.spec.ts'],
   moduleFileExtensions: ['ts', 'js', 'json'],
-  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, { prefix: '<rootDir>/../../' }),
+  moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
+    prefix: '<rootDir>/../../',
+  }),
+  transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
   coverageDirectory: '../../coverage/apps/api-gateway',
 };

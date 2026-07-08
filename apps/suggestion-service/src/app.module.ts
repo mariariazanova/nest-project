@@ -10,6 +10,7 @@ import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { InitialSchema1783077978077 } from './migrations/1783077978077-InitialSchema';
 import { MetricsModule } from '@suggestify/backend/metrics';
+import { LoggerModule } from '@suggestify/backend/logger';
 import { BookEntity } from './suggestion/entities/book.entity';
 import { FilmEntity } from './suggestion/entities/film.entity';
 import { GameEntity } from './suggestion/entities/game.entity';
@@ -89,6 +90,7 @@ import { UserSuggestionCategoryEntity } from './suggestion/entities/user-suggest
     }),
     CircuitBreakerModule,
     MetricsModule,
+    LoggerModule.forRoot({ serviceName: 'suggestion-service' }),
   ],
 })
 export class AppModule {}

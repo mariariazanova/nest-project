@@ -26,7 +26,6 @@ export class AuthService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async signUp(dto: SignUpDto): Promise<{ user: any; accessToken: string }> {
     this.logger.log(`Sign up attempt for username: ${dto.username}`);
 
@@ -55,7 +54,6 @@ export class AuthService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async login(dto: LoginDto): Promise<{ user: any; accessToken: string }> {
     this.logger.log(`Login attempt for username: ${dto.username}`);
 
@@ -82,9 +80,10 @@ export class AuthService {
     };
   }
 
-  async logout(token: string): Promise<{ message: string; statusCode: number }> {
+  async logout(
+    token: string,
+  ): Promise<{ message: string; statusCode: number }> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const decoded = this.jwtService.decode(token) as any;
 
       if (!decoded || !decoded.exp) {
@@ -132,7 +131,8 @@ export class AuthService {
     token: string,
   ): Promise<{ valid: boolean; userId?: string; username?: string }> {
     try {
-      const isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(token);
+      const isBlacklisted =
+        await this.tokenBlacklistService.isTokenBlacklisted(token);
       if (isBlacklisted) {
         return { valid: false };
       }
@@ -146,12 +146,15 @@ export class AuthService {
         userId: decoded.sub,
         username: decoded.username,
       };
-    } catch (error) {
+    } catch {
       return { valid: false };
     }
   }
 
-  private async generateTokens(userId: string, username: string): Promise<{ accessToken: string }> {
+  private async generateTokens(
+    userId: string,
+    username: string,
+  ): Promise<{ accessToken: string }> {
     const payload = { sub: userId, username };
 
     const accessToken = this.jwtService.sign(payload, {

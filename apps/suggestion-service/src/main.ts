@@ -1,15 +1,15 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { ConsulService } from '@suggestify/backend/consul';
 import { SeedService } from './seed.service';
 
 async function bootstrap() {
-  const logger = new Logger('SuggestionService');
   const PORT = process.env.PORT || 3002;
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -24,33 +24,19 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // RabbitMQ Microservice consumer
-  const rabbitMQUrl = process.env.RABBITMQ_URL;
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [rabbitMQUrl],
-      queue: 'suggestion_queue',
-      queueOptions: { durable: true },
-    },
-  });
-
-  await app.startAllMicroservices();
-
   try {
     const seedService = app.get(SeedService);
     await seedService.seedData();
-    logger.log(`Data seeded successfully`);
   } catch (error) {
-    logger.warn(`Seed failed (may already exist): ${(error as Error).message}`);
+    app
+      .get(Logger)
+      .warn(`Seed failed (may already exist): ${(error as Error).message}`);
   }
 
   await app.listen(PORT);
 
   const consulService = app.get(ConsulService);
   await consulService.registerService();
-
-  logger.log(`Suggestion Service running on port ${PORT}`);
 }
 
 bootstrap();

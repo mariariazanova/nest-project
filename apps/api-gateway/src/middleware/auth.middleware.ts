@@ -1,13 +1,24 @@
-import { Injectable, NestMiddleware, UnauthorizedException, Inject, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NestMiddleware,
+  UnauthorizedException,
+  Inject,
+  Logger,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { ClsService } from 'nestjs-cls';
+import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
   private readonly logger = new Logger(AuthMiddleware.name);
 
-  constructor(@Inject('AUTH_SERVICE') private authClient: ClientProxy) {}
+  constructor(
+    @Inject('AUTH_SERVICE') private authClient: ClientProxy,
+    private readonly cls: ClsService,
+  ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
     const path = req.originalUrl.split('?')[0];
@@ -29,7 +40,10 @@ export class AuthMiddleware implements NestMiddleware {
 
     try {
       const result = await firstValueFrom(
-        this.authClient.send({ cmd: 'validate_token' }, { token }),
+        this.authClient.send(
+          { cmd: 'validate_token' },
+          { token, correlationId: this.cls.get(CORRELATION_ID_KEY) },
+        ),
       );
 
       this.logger.debug(`Result got: ${result}`);

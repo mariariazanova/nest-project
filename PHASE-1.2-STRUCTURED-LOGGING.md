@@ -611,8 +611,8 @@ Test cases:
 
 ## Known Limitations
 
-**`pino-pretty` is a devDependency.**
-The Dockerfile's `npm prune --omit=dev` step removes it. The production image will use raw JSON output. Do not add conditional `pino-pretty` requires that could fail in production.
+**`pino-pretty` is a regular dependency (not devDependency).**
+It was moved to `dependencies` because the Dockerfile's `npm prune --omit=dev` step removes devDependencies, and `require.resolve` checks are not reliable inside webpack bundles. In a true production deployment (with `NODE_ENV=production`), pino-pretty is never loaded — the transport is undefined and raw JSON is used.
 
 ---
 

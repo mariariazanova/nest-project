@@ -4,6 +4,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { HttpStatus } from '@nestjs/common';
 import { of, throwError } from 'rxjs';
 import { AxiosResponse } from 'axios';
+import { ClsService } from 'nestjs-cls';
 import { ProxyService } from './proxy.service';
 import { ConsulService } from '@suggestify/backend/consul';
 import { CircuitBreakerService } from '@suggestify/backend/circuit-breaker';
@@ -13,7 +14,7 @@ describe('ProxyService', () => {
   let httpService: HttpService;
   let consulService: ConsulService;
   let circuitBreaker: CircuitBreakerService;
-   
+
   let cacheManager: any;
 
   const mockRequest = {
@@ -64,6 +65,14 @@ describe('ProxyService', () => {
             set: jest.fn(),
           },
         },
+        {
+          provide: ClsService,
+          useValue: {
+            get: jest.fn().mockReturnValue(undefined),
+            set: jest.fn(),
+            run: jest.fn((fn: () => unknown) => fn()),
+          },
+        },
       ],
     }).compile();
 
@@ -86,20 +95,31 @@ describe('ProxyService', () => {
         data: { message: 'Success' },
         statusText: 'OK',
         headers: {},
-         
+
         config: {} as any,
       };
 
       cacheManager.get.mockResolvedValue(null);
       (<jest.Mock>consulService.discoverService).mockResolvedValue(serviceUrl);
-      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
+      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) =>
+        fn(),
+      );
       (<jest.Mock>httpService.request).mockReturnValue(of(targetResponse));
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
-      expect(consulService.discoverService).toHaveBeenCalledWith('auth-service');
-      expect(cacheManager.set).toHaveBeenCalledWith('service:auth-service', serviceUrl, 30000);
+      expect(consulService.discoverService).toHaveBeenCalledWith(
+        'auth-service',
+      );
+      expect(cacheManager.set).toHaveBeenCalledWith(
+        'service:auth-service',
+        serviceUrl,
+        30000,
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         data: { message: 'Success' },
@@ -114,16 +134,21 @@ describe('ProxyService', () => {
         data: { data: 'cached' },
         statusText: 'OK',
         headers: {},
-         
+
         config: {} as any,
       };
 
       cacheManager.get.mockResolvedValue(cachedUrl);
-      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
+      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) =>
+        fn(),
+      );
       (<jest.Mock>httpService.request).mockReturnValue(of(targetResponse));
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
       expect(consulService.discoverService).not.toHaveBeenCalled();
       expect(mockResponse.status).toHaveBeenCalledWith(200);
@@ -133,10 +158,15 @@ describe('ProxyService', () => {
       cacheManager.get.mockResolvedValue(null);
       (<jest.Mock>consulService.discoverService).mockResolvedValue(null);
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
-      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(mockResponse.status).toHaveBeenCalledWith(
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     });
 
     it('should handle 4xx client errors without breaking circuit', async () => {
@@ -149,11 +179,16 @@ describe('ProxyService', () => {
       };
 
       cacheManager.get.mockResolvedValue(serviceUrl);
-      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
+      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) =>
+        fn(),
+      );
       (<jest.Mock>httpService.request).mockReturnValue(throwError(() => error));
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -172,11 +207,16 @@ describe('ProxyService', () => {
       };
 
       cacheManager.get.mockResolvedValue(serviceUrl);
-      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
+      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) =>
+        fn(),
+      );
       (<jest.Mock>httpService.request).mockReturnValue(throwError(() => error));
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
     });
@@ -188,22 +228,26 @@ describe('ProxyService', () => {
         data: { success: true },
         statusText: 'OK',
         headers: {},
-         
+
         config: {} as any,
       };
 
       cacheManager.get.mockResolvedValue(serviceUrl);
-      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) => fn());
+      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn) =>
+        fn(),
+      );
 
-       
       let capturedHeaders: any;
       (<jest.Mock>httpService.request).mockImplementation((config) => {
         capturedHeaders = config.headers;
         return of(targetResponse);
       });
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
       expect(capturedHeaders['X-User-Id']).toBe('user123');
       expect(capturedHeaders).not.toHaveProperty('host');
@@ -214,14 +258,19 @@ describe('ProxyService', () => {
       const serviceUrl = 'http://auth-service:3001';
 
       cacheManager.get.mockResolvedValue(serviceUrl);
-      (<jest.Mock>circuitBreaker.execute).mockImplementation(async (key, fn, fallback) =>
-        fallback(),
+      (<jest.Mock>circuitBreaker.execute).mockImplementation(
+        async (key, fn, fallback) => fallback(),
       );
 
-       
-      await service.forward(mockRequest as any, mockResponse as any, 'auth-service');
+      await service.forward(
+        mockRequest as any,
+        mockResponse as any,
+        'auth-service',
+      );
 
-      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(mockResponse.status).toHaveBeenCalledWith(
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     });
   });
 
@@ -230,7 +279,6 @@ describe('ProxyService', () => {
       const baseUrl = 'http://service:3000';
       const req = { url: '/api/users?page=1&limit=10' };
 
-       
       const result = (service as any).buildTargetUrl(baseUrl, req);
 
       expect(result).toBe('http://service:3000/api/users');
@@ -246,7 +294,6 @@ describe('ProxyService', () => {
         'user-agent': 'test',
       };
 
-       
       const filtered = (service as any).filterHeaders(headers);
 
       expect(filtered).toHaveProperty('authorization');

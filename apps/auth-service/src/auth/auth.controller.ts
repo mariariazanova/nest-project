@@ -1,12 +1,26 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Request,
+  HttpCode,
+  Delete,
+} from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
+import { ClsService } from 'nestjs-cls';
 import { AuthService } from './auth.service';
 import { SignUpDto, LoginDto } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly cls: ClsService,
+  ) {}
 
   @Post('users')
   async signUp(@Body() dto: SignUpDto) {
@@ -34,7 +48,14 @@ export class AuthController {
 
   // RabbitMQ Message Handlers
   @MessagePattern({ cmd: 'validate_token' })
-  async validateToken(@Payload() data: { token: string }) {
-    return this.authService.validateToken(data.token);
+  async validateToken(
+    @Payload() data: { token: string; correlationId?: string },
+  ) {
+    return this.cls.run(async () => {
+      if (data.correlationId) {
+        this.cls.set(CORRELATION_ID_KEY, data.correlationId);
+      }
+      return this.authService.validateToken(data.token);
+    });
   }
 }

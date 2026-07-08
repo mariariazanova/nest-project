@@ -10,6 +10,7 @@ import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
 import { InitialSchema1783077978076 } from './migrations/1783077978076-InitialSchema';
 import { MetricsModule } from '@suggestify/backend/metrics';
+import { LoggerModule } from '@suggestify/backend/logger';
 import { FavoriteEntity } from './favorite/entities/favorite.entity';
 
 @Module({
@@ -70,6 +71,7 @@ import { FavoriteEntity } from './favorite/entities/favorite.entity';
     }),
     CircuitBreakerModule,
     MetricsModule,
+    LoggerModule.forRoot({ serviceName: 'favorite-service' }),
   ],
 })
 export class AppModule {}

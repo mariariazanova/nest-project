@@ -1,12 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger('APIGateway');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   // Security & Performance
   app.use(helmet());
@@ -17,7 +18,12 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-User-Id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-User-Id',
+      'x-correlation-id',
+    ],
   });
 
   // Global validation
@@ -32,10 +38,7 @@ async function bootstrap() {
   app.setGlobalPrefix('v1');
 
   const PORT = process.env.PORT || 3000;
-
   await app.listen(PORT);
-
-  logger.log(`API Gateway running on port ${PORT}`);
 }
 
 bootstrap();
