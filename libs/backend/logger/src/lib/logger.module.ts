@@ -5,6 +5,7 @@ import {
   Module,
   NestModule,
 } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { ClsModule, ClsService } from 'nestjs-cls';
 import {
@@ -12,6 +13,7 @@ import {
   CORRELATION_ID_KEY,
 } from './correlation.middleware';
 import { LoggerModuleOptions } from './logger.options';
+import { LoggingInterceptor } from './logging.interceptor';
 
 export const LOGGER_OPTIONS = Symbol('LOGGER_OPTIONS');
 
@@ -63,6 +65,8 @@ export class LoggerModule implements NestModule {
       providers: [
         { provide: LOGGER_OPTIONS, useValue: options },
         CorrelationMiddleware,
+        LoggingInterceptor,
+        { provide: APP_INTERCEPTOR, useClass: LoggingInterceptor },
       ],
       exports: [ClsModule],
     };
