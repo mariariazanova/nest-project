@@ -1,8 +1,10 @@
 import { Controller, All, Req, Res, UseGuards } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { ProxyService } from './proxy.service';
 
+@ApiExcludeController()
 @Controller()
 @UseGuards(ThrottlerGuard)
 export class ProxyController {

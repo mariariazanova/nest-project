@@ -8,11 +8,20 @@ import {
   NotFoundException,
   Query,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiHeader,
+  ApiQuery,
+  ApiParam,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { SuggestionService } from './suggestion.service';
 import { FilterItemsDto } from './dto/filter-items.dto';
 
+@ApiTags('suggestions')
 @Controller('suggestion')
 export class SuggestionController {
   private readonly logger = new Logger(SuggestionController.name);
@@ -23,6 +32,27 @@ export class SuggestionController {
   ) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'Get filtered suggestions by category, mood, genre, and event',
+  })
+  @ApiHeader({
+    name: 'X-User-Id',
+    required: true,
+    description: 'Authenticated user ID (injected by API Gateway)',
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    example: 'books',
+    description: 'books | films | games | songs',
+  })
+  @ApiQuery({ name: 'mood', required: false, example: 'calm' })
+  @ApiQuery({ name: 'genre', required: false, example: 'fantasy' })
+  @ApiQuery({ name: 'event', required: false, example: 'birthday' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of suggestions matching the criteria.',
+  })
   async findFiltered(
     @Query('category') category: string,
     @Query('mood') mood: string,
@@ -58,6 +88,15 @@ export class SuggestionController {
   }
 
   @Get(':category/:id')
+  @ApiOperation({ summary: 'Get a single suggestion item by category and ID' })
+  @ApiParam({
+    name: 'category',
+    example: 'books',
+    description: 'books | films | games | songs',
+  })
+  @ApiParam({ name: 'id', example: '42' })
+  @ApiResponse({ status: 200, description: 'Suggestion item.' })
+  @ApiResponse({ status: 404, description: 'Not found.' })
   async findOne(@Param('category') category: string, @Param('id') id: string) {
     this.logger.log(`[Request] GET /suggestion/${category}/${id}`);
 
@@ -87,8 +126,12 @@ export class SuggestionController {
   private generateCacheKey(dto: FilterItemsDto): string {
     const { category, mood, genre, event } = dto.criteria;
 
-    return ['suggestions', category || 'all', mood || 'any', genre || 'any', event || 'any'].join(
-      ':',
-    );
+    return [
+      'suggestions',
+      category || 'all',
+      mood || 'any',
+      genre || 'any',
+      event || 'any',
+    ].join(':');
   }
 }

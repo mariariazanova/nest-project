@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -36,6 +37,19 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('v1');
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('API Gateway')
+    .setDescription(
+      'Transparent reverse proxy to downstream services. ' +
+        'Swagger UIs for individual services: ' +
+        'auth-service :3001/api | suggestion-service :3002/api | ' +
+        'history-service :3003/api | favorite-service :3004/api',
+    )
+    .setVersion('1.0')
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, swaggerDocument);
 
   const PORT = process.env.PORT || 3000;
   await app.listen(PORT);

@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { ConsulService } from '@suggestify/backend/consul';
@@ -32,6 +33,16 @@ async function bootstrap() {
       .get(Logger)
       .warn(`Seed failed (may already exist): ${(error as Error).message}`);
   }
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Suggestion Service')
+    .setDescription(
+      'Retrieve filtered suggestions and individual items by category',
+    )
+    .setVersion('1.0')
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, swaggerDocument);
 
   await app.listen(PORT);
 

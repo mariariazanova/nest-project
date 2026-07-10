@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AppModule } from './app.module';
@@ -37,6 +38,15 @@ async function bootstrap() {
       },
     },
   });
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Auth Service')
+    .setDescription('User registration, login, logout, and profile retrieval')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, swaggerDocument);
 
   await app.startAllMicroservices();
   await app.listen(PORT);
