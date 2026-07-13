@@ -13,8 +13,9 @@ COPY nx.json ./
 # Install dependencies
 RUN npm config set fetch-timeout 600000 && npm ci
 
-# Copy frontend source
+# Copy frontend source and shared libs
 COPY apps/frontend ./apps/frontend
+COPY libs ./libs
 
 # Build frontend with Nx
 RUN npx nx build frontend --prod
