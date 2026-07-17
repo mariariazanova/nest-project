@@ -7,6 +7,7 @@ import KeyvRedis from '@keyv/redis';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
+import { TsRestModule } from '@ts-rest/nest';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
@@ -19,6 +20,8 @@ import { InitialSchema1783082720307 } from './migrations/1783082720307-InitialSc
 
 @Module({
   imports: [
+    TsRestModule.register({ isGlobal: true }),
+
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,

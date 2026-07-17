@@ -738,7 +738,6 @@ Verify:
 
 - [ ] `libs/shared/contract` exists with `project.json`
 - [ ] `@suggestify/shared/contract` importPath resolves in `tsconfig.base.json`
-- [ ] `schemas.ts` — 6 shared Zod schemas exported
 - [ ] `auth.contract.ts` — 4 routes
 - [ ] `suggestion.contract.ts` — 2 routes
 - [ ] `favorite.contract.ts` — 5 routes
