@@ -1,22 +1,17 @@
-import { computed, inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { baseBackEndUrl } from '../constants/urls';
+import { Injectable } from '@angular/core';
+import { from, map, Observable } from 'rxjs';
 import { SuggestionHistory } from '../interfaces/suggestion';
-import { NavigationService } from './navigation.service';
+import { createTsRestClient } from '../ts-rest-client';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SuggestionHistoryService {
-  private url = computed(
-    () => this.navigationService.getLink('history') ?? `${baseBackEndUrl}history`,
-  );
-
-  private readonly http = inject(HttpClient);
-  private readonly navigationService = inject(NavigationService);
+  private readonly api = createTsRestClient();
 
   getSuggestionHistory(): Observable<SuggestionHistory[]> {
-    return this.http.get<{ data: SuggestionHistory[] }>(this.url()).pipe(map((res) => res.data));
+    return from(this.api.history.getAll({})).pipe(
+      map(({ body }) => body as unknown as SuggestionHistory[]),
+    );
   }
 }

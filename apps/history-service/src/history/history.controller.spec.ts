@@ -94,9 +94,9 @@ describe('HistoryController', () => {
     it('should return user history', async () => {
       mockHistoryService.getUserHistory.mockResolvedValue(mockHistoryArray);
 
-      const result = await controller.getUserHistory('user-123');
+      const result = await controller.getAll('user-123');
 
-      expect(result).toEqual(mockHistoryArray);
+      expect(result.body).toEqual(mockHistoryArray);
       expect(historyService.getUserHistory).toHaveBeenCalledWith('user-123');
       expect(historyService.getUserHistory).toHaveBeenCalledTimes(1);
     });
@@ -104,16 +104,16 @@ describe('HistoryController', () => {
     it('should return empty array if no history', async () => {
       mockHistoryService.getUserHistory.mockResolvedValue([]);
 
-      const result = await controller.getUserHistory('user-456');
+      const result = await controller.getAll('user-456');
 
-      expect(result).toEqual([]);
+      expect(result.body).toEqual([]);
       expect(historyService.getUserHistory).toHaveBeenCalledWith('user-456');
     });
 
     it('should pass userId from header to service', async () => {
       mockHistoryService.getUserHistory.mockResolvedValue(mockHistoryArray);
 
-      await controller.getUserHistory('user-789');
+      await controller.getAll('user-789');
 
       expect(historyService.getUserHistory).toHaveBeenCalledWith('user-789');
     });
@@ -123,7 +123,7 @@ describe('HistoryController', () => {
         new Error('Database error'),
       );
 
-      await expect(controller.getUserHistory('user-123')).rejects.toThrow(
+      await expect(controller.getAll('user-123')).rejects.toThrow(
         'Database error',
       );
     });
@@ -133,9 +133,9 @@ describe('HistoryController', () => {
     it('should return user statistics', async () => {
       mockHistoryService.getUserStats.mockResolvedValue(mockStats);
 
-      const result = await controller.getUserStats('user-123');
+      const result = await controller.getStats('user-123');
 
-      expect(result).toEqual(mockStats);
+      expect(result.body).toEqual(mockStats);
       expect(historyService.getUserStats).toHaveBeenCalledWith('user-123');
       expect(historyService.getUserStats).toHaveBeenCalledTimes(1);
     });
@@ -143,20 +143,20 @@ describe('HistoryController', () => {
     it('should return stats with correct structure', async () => {
       mockHistoryService.getUserStats.mockResolvedValue(mockStats);
 
-      const result = await controller.getUserStats('user-123');
+      const result = await controller.getStats('user-123');
 
-      expect(result).toHaveProperty('totalSearches');
-      expect(result).toHaveProperty('byCategory');
-      expect(result).toHaveProperty('byMood');
-      expect(result).toHaveProperty('recentSearches');
-      expect(result).toHaveProperty('userId');
-      expect(result).toHaveProperty('generatedAt');
+      expect(result.body).toHaveProperty('totalSearches');
+      expect(result.body).toHaveProperty('byCategory');
+      expect(result.body).toHaveProperty('byMood');
+      expect(result.body).toHaveProperty('recentSearches');
+      expect(result.body).toHaveProperty('userId');
+      expect(result.body).toHaveProperty('generatedAt');
     });
 
     it('should pass userId from header to service', async () => {
       mockHistoryService.getUserStats.mockResolvedValue(mockStats);
 
-      await controller.getUserStats('user-456');
+      await controller.getStats('user-456');
 
       expect(historyService.getUserStats).toHaveBeenCalledWith('user-456');
     });
@@ -172,10 +172,10 @@ describe('HistoryController', () => {
       };
       mockHistoryService.getUserStats.mockResolvedValue(emptyStats);
 
-      const result = await controller.getUserStats('user-empty');
+      const result = await controller.getStats('user-empty');
 
-      expect(result.totalSearches).toBe(0);
-      expect(result.byCategory).toEqual([]);
+      expect(result.body.totalSearches).toBe(0);
+      expect(result.body.byCategory).toEqual([]);
     });
 
     it('should handle service errors', async () => {
@@ -183,7 +183,7 @@ describe('HistoryController', () => {
         new Error('Aggregation error'),
       );
 
-      await expect(controller.getUserStats('user-123')).rejects.toThrow(
+      await expect(controller.getStats('user-123')).rejects.toThrow(
         'Aggregation error',
       );
     });
@@ -193,9 +193,9 @@ describe('HistoryController', () => {
     it('should return specific history item', async () => {
       mockHistoryService.getHistoryItem.mockResolvedValue(mockHistoryItem);
 
-      const result = await controller.getHistoryItem('history-123', 'user-123');
+      const result = await controller.getById('history-123', 'user-123');
 
-      expect(result).toEqual(mockHistoryItem);
+      expect(result.body).toEqual(mockHistoryItem);
       expect(historyService.getHistoryItem).toHaveBeenCalledWith(
         'history-123',
         'user-123',
@@ -206,7 +206,7 @@ describe('HistoryController', () => {
     it('should pass both id and userId to service', async () => {
       mockHistoryService.getHistoryItem.mockResolvedValue(mockHistoryItem);
 
-      await controller.getHistoryItem('history-456', 'user-789');
+      await controller.getById('history-456', 'user-789');
 
       expect(historyService.getHistoryItem).toHaveBeenCalledWith(
         'history-456',
@@ -220,14 +220,14 @@ describe('HistoryController', () => {
       );
 
       await expect(
-        controller.getHistoryItem('history-999', 'user-123'),
+        controller.getById('history-999', 'user-123'),
       ).rejects.toThrow('History item not found');
     });
 
     it('should enforce user ownership through service', async () => {
-      mockHistoryService.getHistoryItem.mockResolvedValue(null);
+      mockHistoryService.getHistoryItem.mockResolvedValue(mockHistoryItem);
 
-      await controller.getHistoryItem('history-123', 'wrong-user');
+      await controller.getById('history-123', 'wrong-user');
 
       expect(historyService.getHistoryItem).toHaveBeenCalledWith(
         'history-123',
@@ -241,7 +241,7 @@ describe('HistoryController', () => {
       );
 
       await expect(
-        controller.getHistoryItem('history-123', 'user-123'),
+        controller.getById('history-123', 'user-123'),
       ).rejects.toThrow('Database error');
     });
   });
@@ -372,7 +372,7 @@ describe('HistoryController', () => {
     it('should extract userId from X-User-Id header in getUserHistory', async () => {
       mockHistoryService.getUserHistory.mockResolvedValue([]);
 
-      await controller.getUserHistory('header-user-123');
+      await controller.getAll('header-user-123');
 
       expect(historyService.getUserHistory).toHaveBeenCalledWith(
         'header-user-123',
@@ -382,7 +382,7 @@ describe('HistoryController', () => {
     it('should extract userId from X-User-Id header in getUserStats', async () => {
       mockHistoryService.getUserStats.mockResolvedValue(mockStats);
 
-      await controller.getUserStats('header-user-456');
+      await controller.getStats('header-user-456');
 
       expect(historyService.getUserStats).toHaveBeenCalledWith(
         'header-user-456',
@@ -392,7 +392,7 @@ describe('HistoryController', () => {
     it('should extract userId from X-User-Id header in getHistoryItem', async () => {
       mockHistoryService.getHistoryItem.mockResolvedValue(mockHistoryItem);
 
-      await controller.getHistoryItem('history-123', 'header-user-789');
+      await controller.getById('history-123', 'header-user-789');
 
       expect(historyService.getHistoryItem).toHaveBeenCalledWith(
         'history-123',

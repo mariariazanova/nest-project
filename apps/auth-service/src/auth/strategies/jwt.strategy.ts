@@ -18,10 +18,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async validate(request: any, payload: any) {
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
-    const isBlacklisted = await this.tokenBlacklistService.isTokenBlacklisted(token);
+    const isBlacklisted =
+      await this.tokenBlacklistService.isTokenBlacklisted(token);
 
     if (isBlacklisted) {
       throw new UnauthorizedException('Token has been revoked');

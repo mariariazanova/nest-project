@@ -174,12 +174,30 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 7. Graceful Shutdown (0.5 day)
+### 6.5. Fix JWT Session Persistence (0.5 day)
+
+Currently the Angular `AuthService` holds the JWT only in memory. Any full-page reload (F5, direct URL, bookmark) drops the token and all authenticated API calls return 401 — the user silently appears logged out.
+
+**Interim fix (this phase):**
+
+- Persist the JWT and username to `localStorage` on login/register
+- Restore token from `localStorage` on `AuthService` initialization (constructor or `APP_INITIALIZER`)
+- Clear `localStorage` on logout
+- Update `AuthInterceptor` to read token from the service (no change needed if it already does)
+
+**Note:** `localStorage` is a deliberate interim step — it is readable by JavaScript and therefore vulnerable to XSS. The permanent fix is Phase 3.12 (httpOnly cookies), which makes the token invisible to scripts entirely. Do not skip Phase 3.12 once this is in place.
+
+**Estimate:** 0.5 day (1 developer)
+
+---
+
+### 7. Graceful Shutdown & Infrastructure Reliability (0.5 day)
 
 - Enable shutdown hooks in all NestJS services
 - Handle SIGTERM gracefully
 - Close database connections cleanly
 - Flush metrics and logs before exit
+- Fix circuit breaker threshold in `libs/backend/circuit-breaker`: currently opens on the first non-2xx response for a given URL. Set `volumeThreshold` (minimum calls before the breaker can open) and `errorThresholdPercentage` (% of failures required to open) on the Opossum options so transient 404s on individual URLs do not immediately block that route for all users
 
 **Estimate:** 0.5 day (1 developer)
 
@@ -251,7 +269,34 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 11. `UserSuggestionEntity.criteria` JSONB → FK columns refactor (1-2 days)
+### 11. Internationalization (i18n) — Multiple Languages (2-3 days)
+
+Add multi-language support to the Angular frontend using `@angular/localize` for compile-time locale builds, or `ngx-translate` for runtime language switching without a full page reload.
+
+**Recommended approach — `ngx-translate` (runtime):**
+
+- Install `@ngx-translate/core` and `@ngx-translate/http-loader`
+- Create `apps/frontend/src/assets/i18n/en.json`, `pl.json` (and additional locales as needed) with all UI strings as key-value pairs
+- Configure `TranslateModule` in `app.config.ts` with `HttpBackend`-based loader
+- Replace all hardcoded strings in templates with `{{ 'KEY' | translate }}` and in components with `TranslateService.instant('KEY')`
+- Add a language switcher component (e.g. in the header) that calls `TranslateService.use('pl')`
+- Persist the selected language to `localStorage` and restore it on app startup
+- Update the error banner messages in `NotificationService` to use translated strings
+
+**Alternative — `@angular/localize` (compile-time):**
+
+- Generates a separate build artifact per locale (one bundle for `en`, one for `pl`, etc.)
+- Nginx serves the correct bundle based on the URL prefix (`/en/`, `/pl/`) or `Accept-Language` header
+- Stronger AOT optimisation but no runtime language switching — full page reload required
+- Better fit if SEO per-language URL is a requirement
+
+**Which to pick:** Prefer `ngx-translate` unless per-language URL paths are needed for SEO.
+
+**Estimate:** 2-3 days (1 developer)
+
+---
+
+### 12. `UserSuggestionEntity.criteria` JSONB → FK columns refactor (1-2 days)
 
 `criteria` is currently stored as `jsonb` with a fixed structure `{ mood, category, genre, event }` that references existing classification entities. This loses referential integrity (invalid values accepted silently) and prevents per-field indexing.
 
@@ -268,7 +313,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 12. Full-text search indexes for suggestion-service (0.5 day)
+### 13. Full-text search indexes for suggestion-service (0.5 day)
 
 The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix queries (`LIKE 'term%'`). Mid-string search (`ILIKE '%term%'`) requires a PostgreSQL GIN index with the `pg_trgm` extension.
 
@@ -278,11 +323,11 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 - Add GIN trigram indexes on `title` for `BookEntity`, `FilmEntity`, `GameEntity`, `SongEntity`
 - Update suggestion queries to use `%term%` patterns with the new indexes
 
-**Depends on:** Phase 1.1 migrations infrastructure; Phase 2.11 suggestion engine refactor
+**Depends on:** Phase 1.1 migrations infrastructure; Phase 2.12 suggestion engine refactor
 
 **Estimate:** 0.5 day (1 developer)
 
-**Phase 2 Total:** 3.5-5 weeks
+**Phase 2 Total:** 4-5.5 weeks
 
 ---
 
@@ -523,7 +568,25 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ---
 
-### 23. Production Deployment (3-5 days)
+### 23. Frontend Production Build Configuration (0.5 day)
+
+Wire Angular environment files so the frontend can point at the correct API gateway URL per environment without requiring a code change.
+
+**Steps:**
+
+- Complete `apps/frontend/src/environments/environment.prod.ts` — set `apiBaseUrl` to the real production gateway URL (stub already created in Phase 1.5)
+- Add `fileReplacements` to the `production` configuration in `apps/frontend/project.json` so `environment.ts` is swapped for `environment.prod.ts` at build time
+- Update `createTsRestClient` in `apps/frontend/src/app/ts-rest-client.ts` to import `apiBaseUrl` from `environment.ts` instead of using the hardcoded default `'http://localhost:3000/v1'`
+- Decide production URL strategy: direct absolute URL (`https://api.yourdomain.com/v1`) or Nginx reverse-proxy at `/v1` (requires custom Nginx config in `infrastructure/Dockerfile.frontend`)
+- If using Nginx proxy: add `/v1` → `http://api-gateway:3000/v1` `proxy_pass` block to the Nginx config inside the frontend Docker image so the browser never needs a cross-origin URL in production
+
+**Note:** `environment.ts` (dev) stays as `http://localhost:3000/v1` — local dev and Docker both expose the gateway on host port 3000 so this works for both.
+
+**Estimate:** 0.5 day (1 developer)
+
+---
+
+### 24. Production Deployment (3-5 days)
 
 - Setup CI/CD pipeline (GitHub Actions)
 - Configure automated testing before deploy
@@ -534,7 +597,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 **Estimate:** 3-5 days (1 developer)
 
-**Phase 6 Total:** 2-2.5 weeks
+**Phase 6 Total:** 2.5-3 weeks
 
 ---
 
@@ -544,7 +607,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 | --------------------------------- | ------------- | ------------------------- |
 | **Phase 0: Technical Debt**       | 1-1.5 weeks   | None (start immediately)  |
 | **Phase 1: Developer Experience** | 2-3 weeks     | After Phase 0             |
-| **Phase 2: Core Features**        | 3.5-5 weeks   | After Phase 1             |
+| **Phase 2: Core Features**        | 4-5.5 weeks   | After Phase 1             |
 | **Phase 3: Security**             | 2.5-4 weeks   | After Phase 2             |
 | **Phase 4: Testing**              | 2.5-3.5 weeks | Can overlap with Phase 3  |
 | **Phase 5: Advanced**             | 2-3 weeks     | After Phase 3 & 4         |

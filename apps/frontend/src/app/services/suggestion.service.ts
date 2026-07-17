@@ -1,10 +1,8 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { catchError, map, Observable, of } from 'rxjs';
-import { baseBackEndUrl } from '../constants/urls';
-import { Suggestion, SuggestionRequest } from '../interfaces/suggestion';
-import { NavigationService } from './navigation.service';
+import { DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { catchError, from, map, Observable, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Suggestion, SuggestionRequest } from '../interfaces/suggestion';
+import { createTsRestClient } from '../ts-rest-client';
 
 @Injectable({
   providedIn: 'root',
@@ -13,12 +11,7 @@ export class SuggestionService {
   suggestions = signal<Suggestion | null>(null);
   isSuggestionLoading = signal<boolean>(false);
 
-  private url = computed(
-    () => this.navigationService.getLink('suggestions') ?? `${baseBackEndUrl}suggestion`,
-  );
-
-  private readonly http = inject(HttpClient);
-  private readonly navigationService = inject(NavigationService);
+  private readonly api = createTsRestClient();
   private readonly destroyRef = inject(DestroyRef);
 
   setSuggestions(data: Suggestion | null) {
@@ -48,12 +41,15 @@ export class SuggestionService {
   }
 
   getSuggestions(request: SuggestionRequest): Observable<Suggestion> {
-    const params = new HttpParams()
-      .set('category', request.criteria.category ?? '')
-      .set('mood', request.criteria.mood ?? '')
-      .set('genre', request.criteria.genre ?? '')
-      .set('event', request.criteria.tag ?? '');
-
-    return this.http.get<{ data: Suggestion }>(this.url(), { params }).pipe(map((res) => res.data));
+    return from(
+      this.api.suggestion.getFiltered({
+        query: {
+          category: request.criteria.category,
+          mood: request.criteria.mood,
+          genre: request.criteria.genre,
+          event: request.criteria.tag,
+        },
+      }),
+    ).pipe(map(({ body }) => body as unknown as Suggestion));
   }
 }

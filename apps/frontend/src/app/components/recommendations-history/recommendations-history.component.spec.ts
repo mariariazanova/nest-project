@@ -1,9 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { of, Subject } from 'rxjs';
 
 import { RecommendationsHistoryComponent } from './recommendations-history.component';
 import { userServiceMockProvider } from '../../../../test/mocks/user.service.mock';
-import { baseBackEndUrl } from '../../constants/urls';
+import { SuggestionHistoryService } from '../../services/suggestion-history.service';
+import { FavoriteService } from '../../services/favorite.service';
 import { suggestionHistoryListMock } from '../../../../test/mocks/suggestion.mock';
 import { Group } from '../../enums/group';
 import { Favorite } from '../../interfaces/favorites';
@@ -19,21 +20,35 @@ const favoriteMock: Favorite = {
 describe('RecommendationHistoryComponent', () => {
   let component: RecommendationsHistoryComponent;
   let fixture: ComponentFixture<RecommendationsHistoryComponent>;
-  let httpMock: HttpTestingController;
+
+  let getSuggestionHistory: ReturnType<typeof vi.fn>;
+  let getFavorites: ReturnType<typeof vi.fn>;
+  let addFavorite: ReturnType<typeof vi.fn>;
+  let removeFavorite: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    getSuggestionHistory = vi.fn().mockReturnValue(of([]));
+    getFavorites = vi.fn().mockReturnValue(of([]));
+    addFavorite = vi.fn();
+    removeFavorite = vi.fn();
+
     await TestBed.configureTestingModule({
-      imports: [RecommendationsHistoryComponent, HttpClientTestingModule],
-      providers: [userServiceMockProvider],
+      imports: [RecommendationsHistoryComponent],
+      providers: [
+        userServiceMockProvider,
+        {
+          provide: SuggestionHistoryService,
+          useValue: { getSuggestionHistory },
+        },
+        {
+          provide: FavoriteService,
+          useValue: { getFavorites, addFavorite, removeFavorite },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecommendationsHistoryComponent);
-    httpMock = TestBed.inject(HttpTestingController);
     component = fixture.componentInstance;
-  });
-
-  afterEach(() => {
-    httpMock.verify();
   });
 
   it('should create', () => {
@@ -41,18 +56,8 @@ describe('RecommendationHistoryComponent', () => {
   });
 
   it('should fetch suggestion history and set signal', () => {
+    getSuggestionHistory.mockReturnValue(of(suggestionHistoryListMock));
     fixture.detectChanges();
-
-    const historyReq = httpMock.expectOne(`${baseBackEndUrl}history`);
-
-    expect(historyReq.request.method).toBe('GET');
-    historyReq.flush({ data: suggestionHistoryListMock });
-
-    const favoriteReq = httpMock.expectOne(`${baseBackEndUrl}favorite`);
-
-    expect(favoriteReq.request.method).toBe('GET');
-    favoriteReq.flush({ data: [] });
-
     expect(component.suggestionHistory()).toEqual(suggestionHistoryListMock);
   });
 
@@ -73,80 +78,65 @@ describe('RecommendationHistoryComponent', () => {
   });
 
   it('#isFavourite should return true after favorites load from server', () => {
+    getFavorites.mockReturnValue(of([favoriteMock]));
     fixture.detectChanges();
-    httpMock.expectOne(`${baseBackEndUrl}history`).flush({ data: [] });
-    httpMock.expectOne(`${baseBackEndUrl}favorite`).flush({ data: [favoriteMock] });
 
     expect(component.isFavourite('BOOK', 'item-1')).toBe(true);
     expect(component.isFavourite('BOOK', 'item-2')).toBe(false);
   });
 
   it('#toggleFavourite should optimistically add star before API responds', () => {
+    const addSubject = new Subject<Favorite>();
+    addFavorite.mockReturnValue(addSubject.asObservable());
     fixture.detectChanges();
-    httpMock.expectOne(`${baseBackEndUrl}history`).flush({ data: [] });
-    httpMock.expectOne(`${baseBackEndUrl}favorite`).flush({ data: [] });
 
     component.toggleFavourite('BOOK', 'item-1', 'My Book');
 
-    // Immediately visible before HTTP response
     expect(component.isFavourite('BOOK', 'item-1')).toBe(true);
 
-    const addReq = httpMock.expectOne(`${baseBackEndUrl}favorite`);
-    expect(addReq.request.method).toBe('POST');
-    addReq.flush({ data: { ...favoriteMock, id: 'fav-new' } });
-
+    addSubject.next({ ...favoriteMock, id: 'fav-new' });
     expect(component.isFavourite('BOOK', 'item-1')).toBe(true);
   });
 
   it('#toggleFavourite should revert optimistic add on non-409 error', () => {
+    const addSubject = new Subject<Favorite>();
+    addFavorite.mockReturnValue(addSubject.asObservable());
     fixture.detectChanges();
-    httpMock.expectOne(`${baseBackEndUrl}history`).flush({ data: [] });
-    httpMock.expectOne(`${baseBackEndUrl}favorite`).flush({ data: [] });
 
     component.toggleFavourite('BOOK', 'item-1', 'My Book');
-
     expect(component.isFavourite('BOOK', 'item-1')).toBe(true);
 
-    httpMock
-      .expectOne(`${baseBackEndUrl}favorite`)
-      .flush('Error', { status: 500, statusText: 'Internal Server Error' });
-
+    addSubject.error({ status: 500 });
     expect(component.isFavourite('BOOK', 'item-1')).toBe(false);
   });
 
   it('#toggleFavourite should optimistically remove star and call DELETE', () => {
+    const removeSubject = new Subject<unknown>();
+    getFavorites.mockReturnValue(of([favoriteMock]));
+    removeFavorite.mockReturnValue(removeSubject.asObservable());
     fixture.detectChanges();
-    httpMock.expectOne(`${baseBackEndUrl}history`).flush({ data: [] });
-    httpMock.expectOne(`${baseBackEndUrl}favorite`).flush({ data: [favoriteMock] });
 
     expect(component.isFavourite('BOOK', 'item-1')).toBe(true);
 
     component.toggleFavourite('BOOK', 'item-1', 'My Book');
 
-    // Immediately removed before HTTP response
     expect(component.isFavourite('BOOK', 'item-1')).toBe(false);
+    expect(removeFavorite).toHaveBeenCalledWith('fav-1');
 
-    const deleteReq = httpMock.expectOne(`${baseBackEndUrl}favorite/fav-1`);
-    expect(deleteReq.request.method).toBe('DELETE');
-    deleteReq.flush(null);
-
+    removeSubject.next(null);
     expect(component.isFavourite('BOOK', 'item-1')).toBe(false);
   });
 
   it('#toggleFavourite should revert optimistic removal on DELETE error', () => {
+    const removeSubject = new Subject<unknown>();
+    getFavorites.mockReturnValue(of([favoriteMock]));
+    removeFavorite.mockReturnValue(removeSubject.asObservable());
     fixture.detectChanges();
-    httpMock.expectOne(`${baseBackEndUrl}history`).flush({ data: [] });
-    httpMock.expectOne(`${baseBackEndUrl}favorite`).flush({ data: [favoriteMock] });
 
     component.toggleFavourite('BOOK', 'item-1', 'My Book');
-
     expect(component.isFavourite('BOOK', 'item-1')).toBe(false);
 
-    httpMock
-      .expectOne(`${baseBackEndUrl}favorite/fav-1`)
-      .flush('Error', { status: 500, statusText: 'Internal Server Error' });
-
-    // Reverted
+    removeSubject.error({ status: 500 });
     expect(component.isFavourite('BOOK', 'item-1')).toBe(true);
   });
 });

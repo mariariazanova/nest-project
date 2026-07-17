@@ -1,3 +1,12 @@
 <app-header></app-header>
 
+@if (notification.message()) {
+  <div class="error-banner">
+    <span>{{ notification.message() }}</span>
+    <button class="error-banner__dismiss" (click)="notification.dismiss()">
+      ✕
+    </button>
+  </div>
+}
+
 <router-outlet />

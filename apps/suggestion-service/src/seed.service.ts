@@ -55,28 +55,39 @@ export class SeedService {
     };
 
     await Promise.all([
-      this.seedItemsWithRelations<FilmEntity>(this.filmRepo, films, savedCategories),
-      this.seedItemsWithRelations<BookEntity>(this.bookRepo, books, savedCategories),
-      this.seedItemsWithRelations<SongEntity>(this.songRepo, songs, savedCategories),
-      this.seedItemsWithRelations<GameEntity>(this.gameRepo, games, savedCategories),
+      this.seedItemsWithRelations<FilmEntity>(
+        this.filmRepo,
+        films,
+        savedCategories,
+      ),
+      this.seedItemsWithRelations<BookEntity>(
+        this.bookRepo,
+        books,
+        savedCategories,
+      ),
+      this.seedItemsWithRelations<SongEntity>(
+        this.songRepo,
+        songs,
+        savedCategories,
+      ),
+      this.seedItemsWithRelations<GameEntity>(
+        this.gameRepo,
+        games,
+        savedCategories,
+      ),
     ]);
   }
 
   async seedItemsWithRelations<T>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     repository: any,
     items: DeepPartial<T>[],
     savedCategories: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       moods: any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       genres: any[];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       events: any[];
     },
     relationFields: string[] = ['moods', 'genres', 'events'],
   ): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const itemsToSave = items.map((item: any) => {
       const { moods, genres, events, ...rest } = item;
       void moods; // Mark as intentionally unused
@@ -87,33 +98,34 @@ export class SeedService {
     });
     const savedItems = await repository.save(itemsToSave);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const itemsWithRelations = savedItems.map((savedItem: any, index: number) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const originalItem = items[index] as any;
-      const result = { ...savedItem };
+    const itemsWithRelations = savedItems.map(
+      (savedItem: any, index: number) => {
+        const originalItem = items[index] as any;
+        const result = { ...savedItem };
 
-      relationFields.forEach((field) => {
-        if (originalItem[field] && Array.isArray(originalItem[field])) {
-          result[field] = originalItem[field]
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((rel: any) =>
-              savedCategories[field as keyof typeof savedCategories]?.find(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (saved: any) => saved.name === rel.name,
-              ),
-            )
-            .filter(Boolean);
-        }
-      });
+        relationFields.forEach((field) => {
+          if (originalItem[field] && Array.isArray(originalItem[field])) {
+            result[field] = originalItem[field]
+              .map((rel: any) =>
+                savedCategories[field as keyof typeof savedCategories]?.find(
+                  (saved: any) => saved.name === rel.name,
+                ),
+              )
+              .filter(Boolean);
+          }
+        });
 
-      return result;
-    });
+        return result;
+      },
+    );
 
     await repository.save(itemsWithRelations);
   }
 
-  private async seedRepository<T>(repo: Repository<T>, data: DeepPartial<T>[]): Promise<void> {
+  private async seedRepository<T>(
+    repo: Repository<T>,
+    data: DeepPartial<T>[],
+  ): Promise<void> {
     // await repo.clear();
 
     const count = await repo.count();

@@ -53,32 +53,40 @@ describe('FavoriteController', () => {
       const favorites = [mockFavorite];
       mockFavoriteService.getUserFavorites.mockResolvedValue(favorites);
 
-      const result = await controller.getUserFavorites(mockUserId, undefined);
+      const result = await controller.getAll(mockUserId, undefined);
 
-      expect(result).toEqual(favorites);
-      expect(service.getUserFavorites).toHaveBeenCalledWith(mockUserId, undefined);
+      expect(result.body).toEqual(favorites);
+      expect(service.getUserFavorites).toHaveBeenCalledWith(
+        mockUserId,
+        undefined,
+      );
     });
 
     it('should return filtered favorites by category', async () => {
       const favorites = [mockFavorite];
       mockFavoriteService.getUserFavorites.mockResolvedValue(favorites);
 
-      const result = await controller.getUserFavorites(mockUserId, 'books');
+      const result = await controller.getAll(mockUserId, 'books');
 
-      expect(result).toEqual(favorites);
-      expect(service.getUserFavorites).toHaveBeenCalledWith(mockUserId, FavoriteCategory.BOOK);
+      expect(result.body).toEqual(favorites);
+      expect(service.getUserFavorites).toHaveBeenCalledWith(
+        mockUserId,
+        FavoriteCategory.BOOK,
+      );
     });
 
     it('should throw BadRequestException if userId is missing', async () => {
-      await expect(controller.getUserFavorites('', undefined)).rejects.toThrow(BadRequestException);
+      await expect(controller.getAll('', undefined)).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(service.getUserFavorites).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException for invalid category', async () => {
-      await expect(controller.getUserFavorites(mockUserId, 'invalid-category')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.getAll(mockUserId, 'invalid-category'),
+      ).rejects.toThrow(BadRequestException);
 
       expect(service.getUserFavorites).not.toHaveBeenCalled();
     });
@@ -88,14 +96,16 @@ describe('FavoriteController', () => {
     it('should return a specific favorite by id', async () => {
       mockFavoriteService.getFavoriteById.mockResolvedValue(mockFavorite);
 
-      const result = await controller.getFavoriteById('fav-1', mockUserId);
+      const result = await controller.getById('fav-1', mockUserId);
 
-      expect(result).toEqual(mockFavorite);
+      expect(result.body).toEqual(mockFavorite);
       expect(service.getFavoriteById).toHaveBeenCalledWith(mockUserId, 'fav-1');
     });
 
     it('should throw BadRequestException if userId is missing', async () => {
-      await expect(controller.getFavoriteById('fav-1', '')).rejects.toThrow(BadRequestException);
+      await expect(controller.getById('fav-1', '')).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(service.getFavoriteById).not.toHaveBeenCalled();
     });
@@ -111,14 +121,16 @@ describe('FavoriteController', () => {
     it('should add a new favorite', async () => {
       mockFavoriteService.addFavorite.mockResolvedValue(mockFavorite);
 
-      const result = await controller.addFavorite(createDto, mockUserId);
+      const result = await controller.add(createDto, mockUserId);
 
-      expect(result).toEqual(mockFavorite);
+      expect(result.body).toEqual(mockFavorite);
       expect(service.addFavorite).toHaveBeenCalledWith(mockUserId, createDto);
     });
 
     it('should throw BadRequestException if userId is missing', async () => {
-      await expect(controller.addFavorite(createDto, '')).rejects.toThrow(BadRequestException);
+      await expect(controller.add(createDto, '')).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(service.addFavorite).not.toHaveBeenCalled();
     });
@@ -128,13 +140,15 @@ describe('FavoriteController', () => {
     it('should remove a favorite', async () => {
       mockFavoriteService.removeFavorite.mockResolvedValue(undefined);
 
-      await controller.removeFavorite('fav-1', mockUserId);
+      await controller.remove('fav-1', mockUserId);
 
       expect(service.removeFavorite).toHaveBeenCalledWith(mockUserId, 'fav-1');
     });
 
     it('should throw BadRequestException if userId is missing', async () => {
-      await expect(controller.removeFavorite('fav-1', '')).rejects.toThrow(BadRequestException);
+      await expect(controller.remove('fav-1', '')).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(service.removeFavorite).not.toHaveBeenCalled();
     });
@@ -144,24 +158,36 @@ describe('FavoriteController', () => {
     it('should return true if item is favorite', async () => {
       mockFavoriteService.isFavorite.mockResolvedValue(true);
 
-      const result = await controller.checkFavorite('books', 'item-1', mockUserId);
+      const result = await controller.checkFavorite(
+        'books',
+        'item-1',
+        mockUserId,
+      );
 
-      expect(result).toEqual({ isFavorite: true });
-      expect(service.isFavorite).toHaveBeenCalledWith(mockUserId, 'item-1', FavoriteCategory.BOOK);
+      expect(result.body).toEqual({ isFavorite: true });
+      expect(service.isFavorite).toHaveBeenCalledWith(
+        mockUserId,
+        'item-1',
+        FavoriteCategory.BOOK,
+      );
     });
 
     it('should return false if item is not favorite', async () => {
       mockFavoriteService.isFavorite.mockResolvedValue(false);
 
-      const result = await controller.checkFavorite('books', 'item-1', mockUserId);
+      const result = await controller.checkFavorite(
+        'books',
+        'item-1',
+        mockUserId,
+      );
 
-      expect(result).toEqual({ isFavorite: false });
+      expect(result.body).toEqual({ isFavorite: false });
     });
 
     it('should throw BadRequestException if userId is missing', async () => {
-      await expect(controller.checkFavorite('books', 'item-1', '')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        controller.checkFavorite('books', 'item-1', ''),
+      ).rejects.toThrow(BadRequestException);
 
       expect(service.isFavorite).not.toHaveBeenCalled();
     });

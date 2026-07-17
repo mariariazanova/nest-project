@@ -36,7 +36,8 @@ describe('JwtAuthGuard - Integration', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'JWT_SECRET') return 'test-secret-key-for-testing-only';
+              if (key === 'JWT_SECRET')
+                return 'test-secret-key-for-testing-only';
               return null;
             }),
           },
@@ -104,7 +105,9 @@ describe('JwtAuthGuard - Integration', () => {
       // Mock token as blacklisted
       mockCacheManager.get.mockResolvedValue({ revokedAt: new Date() });
 
-      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should reject malformed JWT token', async () => {
@@ -119,7 +122,6 @@ describe('JwtAuthGuard - Integration', () => {
   });
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function createMockExecutionContext(requestData: any): ExecutionContext {
   const mockRequest = {
     headers: requestData.headers || {},

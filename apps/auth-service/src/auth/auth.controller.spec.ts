@@ -82,13 +82,13 @@ describe('AuthController', () => {
 
       mockAuthService.signUp.mockResolvedValue(mockResult);
 
-      const result = await controller.signUp(dto);
+      const result = await controller.register(dto);
 
       expect(authService.signUp).toHaveBeenCalledWith(dto);
       expect(authService.signUp).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockResult);
-      expect(result.user.username).toBe('newuser');
-      expect(result.accessToken).toBeDefined();
+      expect(result.body).toEqual(mockResult);
+      expect(result.body.user.username).toBe('newuser');
+      expect(result.body.accessToken).toBeDefined();
     });
 
     it('should throw error if username already exists', async () => {
@@ -101,7 +101,7 @@ describe('AuthController', () => {
         new Error('Username already exists'),
       );
 
-      await expect(controller.signUp(dto)).rejects.toThrow(
+      await expect(controller.register(dto)).rejects.toThrow(
         'Username already exists',
       );
       expect(authService.signUp).toHaveBeenCalledWith(dto);
@@ -117,7 +117,7 @@ describe('AuthController', () => {
         new Error('Password must be at least 6 characters'),
       );
 
-      await expect(controller.signUp(dto)).rejects.toThrow(
+      await expect(controller.register(dto)).rejects.toThrow(
         'Password must be at least 6 characters',
       );
     });
@@ -144,8 +144,8 @@ describe('AuthController', () => {
 
       expect(authService.login).toHaveBeenCalledWith(dto);
       expect(authService.login).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockResult);
-      expect(result.accessToken).toBeTruthy();
+      expect(result.body).toEqual(mockResult);
+      expect(result.body.accessToken).toBeTruthy();
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
@@ -216,7 +216,7 @@ describe('AuthController', () => {
 
       expect(authService.logout).toHaveBeenCalledWith('jwt.token.abc');
       expect(authService.logout).toHaveBeenCalledTimes(1);
-      expect(result.message).toBe('Logged out successfully');
+      expect(result.body.message).toBe('Logged out successfully');
     });
 
     it('should be protected by JwtAuthGuard', () => {
@@ -284,8 +284,8 @@ describe('AuthController', () => {
 
       expect(authService.getProfile).toHaveBeenCalledWith('user-uuid-789');
       expect(authService.getProfile).toHaveBeenCalledTimes(1);
-      expect(result).toEqual(mockProfile);
-      expect(result.id).toBe('user-uuid-789');
+      expect(result.body).toEqual(mockProfile);
+      expect(result.body.id).toBe('user-uuid-789');
     });
 
     it('should be protected by JwtAuthGuard', () => {
@@ -457,7 +457,7 @@ describe('AuthController', () => {
 
   describe('Controller Integration', () => {
     it('should have all required endpoints', () => {
-      expect(controller.signUp).toBeDefined();
+      expect(controller.register).toBeDefined();
       expect(controller.login).toBeDefined();
       expect(controller.logout).toBeDefined();
       expect(controller.getProfile).toBeDefined();

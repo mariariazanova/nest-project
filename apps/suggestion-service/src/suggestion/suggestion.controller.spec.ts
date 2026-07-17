@@ -59,10 +59,18 @@ describe('SuggestionController', () => {
     it('should return cached result when cache hit', async () => {
       mockCacheManager.get.mockResolvedValue(mockResult);
 
-      const result = await controller.findFiltered('movie', 'happy', 'comedy', 'party', mockUserId);
+      const result = await controller.getFiltered(
+        'movie',
+        'happy',
+        'comedy',
+        'party',
+        mockUserId,
+      );
 
-      expect(result).toEqual(mockResult);
-      expect(mockCacheManager.get).toHaveBeenCalledWith('suggestions:movie:happy:comedy:party');
+      expect(result.body).toEqual(mockResult);
+      expect(mockCacheManager.get).toHaveBeenCalledWith(
+        'suggestions:movie:happy:comedy:party',
+      );
       expect(mockSuggestionService.findManyByProperty).not.toHaveBeenCalled();
       expect(mockCacheManager.set).not.toHaveBeenCalled();
     });
@@ -71,11 +79,22 @@ describe('SuggestionController', () => {
       mockCacheManager.get.mockResolvedValue(null);
       mockSuggestionService.findManyByProperty.mockResolvedValue(mockResult);
 
-      const result = await controller.findFiltered('movie', 'happy', 'comedy', 'party', mockUserId);
+      const result = await controller.getFiltered(
+        'movie',
+        'happy',
+        'comedy',
+        'party',
+        mockUserId,
+      );
 
-      expect(result).toEqual(mockResult);
-      expect(mockCacheManager.get).toHaveBeenCalledWith('suggestions:movie:happy:comedy:party');
-      expect(mockSuggestionService.findManyByProperty).toHaveBeenCalledWith(mockDto, mockUserId);
+      expect(result.body).toEqual(mockResult);
+      expect(mockCacheManager.get).toHaveBeenCalledWith(
+        'suggestions:movie:happy:comedy:party',
+      );
+      expect(mockSuggestionService.findManyByProperty).toHaveBeenCalledWith(
+        mockDto,
+        mockUserId,
+      );
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'suggestions:movie:happy:comedy:party',
         mockResult,
@@ -87,18 +106,34 @@ describe('SuggestionController', () => {
       mockCacheManager.get.mockResolvedValue(null);
       mockSuggestionService.findManyByProperty.mockResolvedValue(mockResult);
 
-      await controller.findFiltered('book', undefined, 'fiction', undefined, mockUserId);
+      await controller.getFiltered(
+        'book',
+        undefined,
+        'fiction',
+        undefined,
+        mockUserId,
+      );
 
-      expect(mockCacheManager.get).toHaveBeenCalledWith('suggestions:book:any:fiction:any');
+      expect(mockCacheManager.get).toHaveBeenCalledWith(
+        'suggestions:book:any:fiction:any',
+      );
     });
 
     it('should generate correct cache key with no criteria', async () => {
       mockCacheManager.get.mockResolvedValue(null);
       mockSuggestionService.findManyByProperty.mockResolvedValue(mockResult);
 
-      await controller.findFiltered(undefined, undefined, undefined, undefined, mockUserId);
+      await controller.getFiltered(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mockUserId,
+      );
 
-      expect(mockCacheManager.get).toHaveBeenCalledWith('suggestions:all:any:any:any');
+      expect(mockCacheManager.get).toHaveBeenCalledWith(
+        'suggestions:all:any:any:any',
+      );
     });
   });
 
@@ -110,9 +145,9 @@ describe('SuggestionController', () => {
     it('should return cached result when cache hit', async () => {
       mockCacheManager.get.mockResolvedValue(mockResult);
 
-      const result = await controller.findOne(mockCategory, mockId);
+      const result = await controller.getOne(mockCategory, mockId);
 
-      expect(result).toEqual(mockResult);
+      expect(result.body).toEqual(mockResult);
       expect(mockCacheManager.get).toHaveBeenCalledWith('suggestion:movie:123');
       expect(mockSuggestionService.findOne).not.toHaveBeenCalled();
       expect(mockCacheManager.set).not.toHaveBeenCalled();
@@ -122,11 +157,14 @@ describe('SuggestionController', () => {
       mockCacheManager.get.mockResolvedValue(null);
       mockSuggestionService.findOne.mockResolvedValue(mockResult);
 
-      const result = await controller.findOne(mockCategory, mockId);
+      const result = await controller.getOne(mockCategory, mockId);
 
-      expect(result).toEqual(mockResult);
+      expect(result.body).toEqual(mockResult);
       expect(mockCacheManager.get).toHaveBeenCalledWith('suggestion:movie:123');
-      expect(mockSuggestionService.findOne).toHaveBeenCalledWith(mockCategory, mockId);
+      expect(mockSuggestionService.findOne).toHaveBeenCalledWith(
+        mockCategory,
+        mockId,
+      );
       expect(mockCacheManager.set).toHaveBeenCalledWith(
         'suggestion:movie:123',
         mockResult,
@@ -138,7 +176,7 @@ describe('SuggestionController', () => {
       mockCacheManager.get.mockResolvedValue(null);
       mockSuggestionService.findOne.mockResolvedValue(mockResult);
 
-      await controller.findOne('book', '456');
+      await controller.getOne('book', '456');
 
       expect(mockCacheManager.get).toHaveBeenCalledWith('suggestion:book:456');
       expect(mockSuggestionService.findOne).toHaveBeenCalledWith('book', '456');
@@ -150,10 +188,12 @@ describe('SuggestionController', () => {
       mockCacheManager.get.mockResolvedValue(null);
       mockSuggestionService.findManyByProperty.mockResolvedValue([]);
 
-      await controller.findFiltered(null, undefined, '', null, 'user-123');
+      await controller.getFiltered(null, undefined, '', null, 'user-123');
 
       // Empty string should be treated as falsy
-      expect(mockCacheManager.get).toHaveBeenCalledWith('suggestions:all:any:any:any');
+      expect(mockCacheManager.get).toHaveBeenCalledWith(
+        'suggestions:all:any:any:any',
+      );
     });
   });
 });

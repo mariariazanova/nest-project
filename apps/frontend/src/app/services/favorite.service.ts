@@ -1,9 +1,7 @@
-import { computed, inject, Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { map, Observable } from 'rxjs';
-import { baseBackEndUrl } from '../constants/urls';
+import { Injectable } from '@angular/core';
+import { from, map, Observable } from 'rxjs';
 import { Favorite } from '../interfaces/favorites';
-import { NavigationService } from './navigation.service';
+import { createTsRestClient } from '../ts-rest-client';
 
 export interface AddFavoriteRequest {
   itemId: string;
@@ -15,32 +13,38 @@ export interface AddFavoriteRequest {
   providedIn: 'root',
 })
 export class FavoriteService {
-  private url = computed(
-    () => this.navigationService.getLink('favorites') ?? `${baseBackEndUrl}favorite`,
-  );
-
-  private readonly http = inject(HttpClient);
-  private readonly navigationService = inject(NavigationService);
+  private readonly api = createTsRestClient();
 
   getFavorites(category?: string): Observable<Favorite[]> {
-    let params = new HttpParams();
-    if (category) {
-      params = params.set('category', category);
-    }
-    return this.http.get<{ data: Favorite[] }>(this.url(), { params }).pipe(map((res) => res.data));
+    return from(
+      this.api.favorite.getAll({ query: { category: category as any } }),
+    ).pipe(map(({ body }) => body as unknown as Favorite[]));
   }
 
   addFavorite(request: AddFavoriteRequest): Observable<Favorite> {
-    return this.http.post<{ data: Favorite }>(this.url(), request).pipe(map((res) => res.data));
+    return from(this.api.favorite.add({ body: request as any })).pipe(
+      map((res) => {
+        if (res.status >= 400) throw { status: res.status };
+        return res.body as unknown as Favorite;
+      }),
+    );
   }
 
-  removeFavorite(favoriteId: string): Observable<void> {
-    return this.http.delete<void>(`${this.url()}/${favoriteId}`);
+  removeFavorite(favoriteId: string): Observable<unknown> {
+    return from(this.api.favorite.remove({ params: { id: favoriteId } })).pipe(
+      map((res) => {
+        if (res.status >= 400) throw { status: res.status };
+        return res;
+      }),
+    );
   }
 
-  checkIsFavorite(category: string, itemId: string): Observable<{ isFavorite: boolean }> {
-    return this.http
-      .get<{ data: { isFavorite: boolean } }>(`${this.url()}/check/${category}/${itemId}`)
-      .pipe(map((res) => res.data));
+  checkIsFavorite(
+    category: string,
+    itemId: string,
+  ): Observable<{ isFavorite: boolean }> {
+    return from(
+      this.api.favorite.checkFavorite({ params: { category, itemId } }),
+    ).pipe(map(({ body }) => body as { isFavorite: boolean }));
   }
 }

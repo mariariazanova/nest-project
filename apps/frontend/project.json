@@ -8,14 +8,13 @@
   "targets": {
     "build": {
       "executor": "@angular/build:application",
-      "outputs": [
-        "{options.outputPath}"
-      ],
+      "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/frontend",
         "index": "apps/frontend/src/index.html",
         "browser": "apps/frontend/src/main.ts",
+        "polyfills": ["zone.js"],
         "tsConfig": "apps/frontend/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
         "assets": [
@@ -29,9 +28,7 @@
             "output": "assets"
           }
         ],
-        "styles": [
-          "apps/frontend/src/styles.scss"
-        ]
+        "styles": ["apps/frontend/src/styles.scss"]
       },
       "configurations": {
         "production": {

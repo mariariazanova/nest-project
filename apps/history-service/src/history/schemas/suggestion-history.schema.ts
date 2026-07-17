@@ -10,10 +10,10 @@ export class SuggestionHistory {
 
   @Prop({ type: Object, required: true })
   criteria: {
-    category?: string[];
-    mood?: string[];
-    genre?: string[];
-    event?: string[];
+    category?: string;
+    mood?: string;
+    genre?: string;
+    event?: string;
   };
 
   @Prop({ type: Array, required: true })
@@ -34,7 +34,8 @@ export class SuggestionHistory {
   };
 }
 
-export const SuggestionHistorySchema = SchemaFactory.createForClass(SuggestionHistory);
+export const SuggestionHistorySchema =
+  SchemaFactory.createForClass(SuggestionHistory);
 
 // Indexes for performance
 SuggestionHistorySchema.index({ userId: 1, timestamp: -1 });

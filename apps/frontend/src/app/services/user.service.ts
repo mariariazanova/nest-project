@@ -1,9 +1,9 @@
-import { computed, inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, Observable, tap } from 'rxjs';
-import { UserWithoutId, UserWithoutPassword } from '../interfaces/user';
-import { baseBackEndUrl } from '../constants/urls';
-import { NavigationService } from './navigation.service';
+import { Injectable } from '@angular/core';
+import { from } from 'rxjs';
+import { map, tap } from 'rxjs';
+import { UserWithoutPassword } from '../interfaces/user';
+import { Status } from '@suggestify/shared/contract';
+import { createTsRestClient } from '../ts-rest-client';
 
 export interface AuthResponse {
   user: UserWithoutPassword;
@@ -17,42 +17,42 @@ export class UserService {
   userId: string | null = null;
   accessToken: string | null = null;
 
-  private url = computed(
-    () => this.navigationService.getLink('sessions') ?? `${baseBackEndUrl}auth/sessions`,
-  );
-  private usersUrl = computed(
-    () => this.navigationService.getLink('users') ?? `${baseBackEndUrl}auth/users`,
-  );
+  private readonly api = createTsRestClient();
 
-  private readonly http = inject(HttpClient);
-  private readonly navigationService = inject(NavigationService);
-
-  login(user: UserWithoutId): Observable<AuthResponse> {
-    return this.http.post<{ data: AuthResponse }>(this.url(), user).pipe(
-      map((res) => res.data),
-      tap((res) => {
-        this.accessToken = res.accessToken;
-        this.userId = res.user.id;
-      }),
+  login(user: { username: string; password: string }) {
+    return from(this.api.auth.login({ body: user })).pipe(
+      map((result) => this.handleAuthResponse(result)),
     );
   }
 
-  createUser(user: UserWithoutId): Observable<AuthResponse> {
-    return this.http.post<{ data: AuthResponse }>(this.usersUrl(), user).pipe(
-      map((res) => res.data),
-      tap((res) => {
-        this.accessToken = res.accessToken;
-        this.userId = res.user.id;
-      }),
+  createUser(user: { username: string; password: string }) {
+    return from(this.api.auth.register({ body: user })).pipe(
+      map((result) => this.handleAuthResponse(result)),
     );
   }
 
-  logout(): Observable<unknown> {
-    return this.http.delete(this.url(), {}).pipe(
-      tap(() => {
-        this.accessToken = null;
-        this.userId = null;
-      }),
-    );
+  private handleAuthResponse(result: {
+    status: number;
+    body: unknown;
+  }): AuthResponse {
+    if (result.status !== Status.Ok && result.status !== Status.Created) {
+      const rawError = result.body as any;
+      // Unwrap gateway's { data: {...}, links: {...} } wrapper so er?.error?.message resolves
+      const errorBody = rawError?.data ?? rawError;
+      throw { error: errorBody };
+    }
+    const data: AuthResponse = result.body as AuthResponse;
+    this.accessToken = data.accessToken;
+    this.userId = data.user.id;
+    return data;
+  }
+
+  logout() {
+    return from(this.api.auth.logout({})).pipe(tap(() => this.clearSession()));
+  }
+
+  clearSession(): void {
+    this.accessToken = null;
+    this.userId = null;
   }
 }

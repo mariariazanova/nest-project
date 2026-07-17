@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { TsRestModule } from '@ts-rest/nest';
 import { SuggestionModule } from './suggestion/suggestion.module';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
@@ -24,6 +25,8 @@ import { UserSuggestionCategoryEntity } from './suggestion/entities/user-suggest
 
 @Module({
   imports: [
+    TsRestModule.register({ isGlobal: true }),
+
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

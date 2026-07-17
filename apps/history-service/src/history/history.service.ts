@@ -3,7 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { SuggestionHistory, SuggestionHistoryDocument } from './schemas/suggestion-history.schema';
+import {
+  SuggestionHistory,
+  SuggestionHistoryDocument,
+} from './schemas/suggestion-history.schema';
 
 @Injectable()
 export class HistoryService {
@@ -19,9 +22,7 @@ export class HistoryService {
 
   async createHistoryEntry(data: {
     userId: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     criteria: any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     suggestions: any[];
   }): Promise<SuggestionHistory> {
     this.logger.log(`Creating history entry for user: ${data.userId}`);
@@ -64,7 +65,10 @@ export class HistoryService {
     // }
 
     // Query MongoDB
-    const history = await this.historyModel.find({ userId }).sort({ timestamp: -1 }).exec();
+    const history = await this.historyModel
+      .find({ userId })
+      .sort({ timestamp: -1 })
+      .exec();
 
     // Cache for 15 minutes
     // await this.cacheManager.set(cacheKey, history, 900000);
@@ -105,7 +109,6 @@ export class HistoryService {
     return item;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getUserStats(userId: string): Promise<any> {
     this.logger.log(`Calculating stats for user: ${userId}`);
 

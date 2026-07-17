@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { TsRestModule } from '@ts-rest/nest';
 import { FavoriteModule } from './favorite/favorite.module';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
@@ -15,6 +16,8 @@ import { FavoriteEntity } from './favorite/entities/favorite.entity';
 
 @Module({
   imports: [
+    TsRestModule.register({ isGlobal: true }),
+
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,

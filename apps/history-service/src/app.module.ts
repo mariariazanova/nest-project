@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 
+import { TsRestModule } from '@ts-rest/nest';
 import { HistoryModule } from './history/history.module';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
@@ -14,6 +15,8 @@ import { DatabaseMigrationService } from './database/database-migration.service'
 
 @Module({
   imports: [
+    TsRestModule.register({ isGlobal: true }),
+
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

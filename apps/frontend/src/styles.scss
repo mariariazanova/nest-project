@@ -4,6 +4,28 @@
   box-sizing: border-box;
 }
 
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #c0392b;
+  color: #fff;
+  font-size: 14px;
+
+  &__dismiss {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+  }
+}
+
 @font-face {
   font-family: 'Fenomen Sans';
   src: url('/assets/fonts/FenomenSans-Black.ttf') format('truetype');

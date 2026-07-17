@@ -8,8 +8,6 @@ import {
   Headers,
   Query,
   Logger,
-  HttpCode,
-  HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
 import {
@@ -21,13 +19,19 @@ import {
   ApiBody,
   ApiResponse,
 } from '@nestjs/swagger';
+import { TsRest, NestControllerInterface } from '@ts-rest/nest';
+import { favoriteContract, Status } from '@suggestify/shared/contract';
 import { FavoriteService } from './favorite.service';
 import { CreateFavoriteDto } from './dto/create-favorite.dto';
 import { FavoriteCategory } from './entities/favorite.entity';
 
+@TsRest({})
 @ApiTags('favorites')
 @Controller('favorite')
-export class FavoriteController {
+// Method names must match the route keys defined in favoriteContract
+export class FavoriteController
+  implements NestControllerInterface<typeof favoriteContract>
+{
   private readonly logger = new Logger(FavoriteController.name);
 
   constructor(private readonly favoriteService: FavoriteService) {}
@@ -38,6 +42,7 @@ export class FavoriteController {
     name: 'X-User-Id',
     required: true,
     description: 'Authenticated user ID (injected by API Gateway)',
+    example: '00000000-0000-0000-0000-000000000001',
   })
   @ApiQuery({
     name: 'category',
@@ -45,9 +50,12 @@ export class FavoriteController {
     enum: FavoriteCategory,
     description: 'Filter by category',
   })
-  @ApiResponse({ status: 200, description: 'Array of favorite items.' })
-  @ApiResponse({ status: 400, description: 'Missing X-User-Id header.' })
-  async getUserFavorites(
+  @ApiResponse({ status: Status.Ok, description: 'Array of favorite items.' })
+  @ApiResponse({
+    status: Status.BadRequest,
+    description: 'Missing X-User-Id header.',
+  })
+  async getAll(
     @Headers('X-User-Id') userId: string,
     @Query('category') category?: string,
   ) {
@@ -72,39 +80,50 @@ export class FavoriteController {
       favoriteCategory = category as FavoriteCategory;
     }
 
-    return this.favoriteService.getUserFavorites(userId, favoriteCategory);
+    const result = await this.favoriteService.getUserFavorites(
+      userId,
+      favoriteCategory,
+    );
+
+    return { status: Status.Ok, body: result };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single favorite by ID' })
-  @ApiHeader({ name: 'X-User-Id', required: true })
+  @ApiHeader({
+    name: 'X-User-Id',
+    required: true,
+    example: '00000000-0000-0000-0000-000000000001',
+  })
   @ApiParam({ name: 'id', description: 'Favorite record UUID' })
-  @ApiResponse({ status: 200, description: 'Favorite item.' })
-  @ApiResponse({ status: 404, description: 'Not found.' })
-  async getFavoriteById(
-    @Param('id') id: string,
-    @Headers('X-User-Id') userId: string,
-  ) {
+  @ApiResponse({ status: Status.Ok, description: 'Favorite item.' })
+  @ApiResponse({ status: Status.NotFound, description: 'Not found.' })
+  async getById(@Param('id') id: string, @Headers('X-User-Id') userId: string) {
     this.logger.log(`GET /favorite/${id} - userId: ${userId}`);
 
     if (!userId) {
       throw new BadRequestException('Missing X-User-Id header');
     }
 
-    return this.favoriteService.getFavoriteById(userId, id);
+    const result = await this.favoriteService.getFavoriteById(userId, id);
+
+    return { status: Status.Ok, body: result };
   }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Add an item to favorites' })
-  @ApiHeader({ name: 'X-User-Id', required: true })
+  @ApiHeader({
+    name: 'X-User-Id',
+    required: true,
+    example: '00000000-0000-0000-0000-000000000001',
+  })
   @ApiBody({ type: CreateFavoriteDto })
-  @ApiResponse({ status: 201, description: 'Favorite created.' })
+  @ApiResponse({ status: Status.Created, description: 'Favorite created.' })
   @ApiResponse({
-    status: 400,
+    status: Status.BadRequest,
     description: 'Validation error or missing header.',
   })
-  async addFavorite(
+  async add(
     @Body() dto: CreateFavoriteDto,
     @Headers('X-User-Id') userId: string,
   ) {
@@ -116,20 +135,22 @@ export class FavoriteController {
       throw new BadRequestException('Missing X-User-Id header');
     }
 
-    return this.favoriteService.addFavorite(userId, dto);
+    const result = await this.favoriteService.addFavorite(userId, dto);
+
+    return { status: Status.Created, body: result };
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Remove a favorite by ID' })
-  @ApiHeader({ name: 'X-User-Id', required: true })
+  @ApiHeader({
+    name: 'X-User-Id',
+    required: true,
+    example: '00000000-0000-0000-0000-000000000001',
+  })
   @ApiParam({ name: 'id', description: 'Favorite record UUID' })
-  @ApiResponse({ status: 204, description: 'Deleted.' })
-  @ApiResponse({ status: 404, description: 'Not found.' })
-  async removeFavorite(
-    @Param('id') id: string,
-    @Headers('X-User-Id') userId: string,
-  ) {
+  @ApiResponse({ status: Status.NoContent, description: 'Deleted.' })
+  @ApiResponse({ status: Status.NotFound, description: 'Not found.' })
+  async remove(@Param('id') id: string, @Headers('X-User-Id') userId: string) {
     this.logger.log(`DELETE /favorite/${id} - userId: ${userId}`);
 
     if (!userId) {
@@ -137,16 +158,22 @@ export class FavoriteController {
     }
 
     await this.favoriteService.removeFavorite(userId, id);
+
+    return { status: Status.NoContent, body: undefined };
   }
 
   @Get('check/:category/:itemId')
   @ApiOperation({
     summary: "Check if a specific item is in the user's favorites",
   })
-  @ApiHeader({ name: 'X-User-Id', required: true })
+  @ApiHeader({
+    name: 'X-User-Id',
+    required: true,
+    example: '00000000-0000-0000-0000-000000000001',
+  })
   @ApiParam({ name: 'category', enum: FavoriteCategory })
   @ApiParam({ name: 'itemId', example: 'b3fa1c2d-4e5f-6789-abcd-ef0123456789' })
-  @ApiResponse({ status: 200, description: '{ isFavorite: boolean }' })
+  @ApiResponse({ status: Status.Ok, description: '{ isFavorite: boolean }' })
   async checkFavorite(
     @Param('category') category: string,
     @Param('itemId') itemId: string,
@@ -170,6 +197,6 @@ export class FavoriteController {
       category as FavoriteCategory,
     );
 
-    return { isFavorite };
+    return { status: Status.Ok, body: { isFavorite } };
   }
 }

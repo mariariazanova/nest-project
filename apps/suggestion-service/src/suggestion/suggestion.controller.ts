@@ -18,12 +18,18 @@ import {
 } from '@nestjs/swagger';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { TsRest, NestControllerInterface } from '@ts-rest/nest';
+import { suggestionContract, Status } from '@suggestify/shared/contract';
 import { SuggestionService } from './suggestion.service';
 import { FilterItemsDto } from './dto/filter-items.dto';
 
+@TsRest({})
 @ApiTags('suggestions')
 @Controller('suggestion')
-export class SuggestionController {
+// Method names must match the route keys defined in suggestionContract
+export class SuggestionController
+  implements NestControllerInterface<typeof suggestionContract>
+{
   private readonly logger = new Logger(SuggestionController.name);
 
   constructor(
@@ -39,6 +45,7 @@ export class SuggestionController {
     name: 'X-User-Id',
     required: true,
     description: 'Authenticated user ID (injected by API Gateway)',
+    example: '00000000-0000-0000-0000-000000000001',
   })
   @ApiQuery({
     name: 'category',
@@ -50,10 +57,10 @@ export class SuggestionController {
   @ApiQuery({ name: 'genre', required: false, example: 'fantasy' })
   @ApiQuery({ name: 'event', required: false, example: 'birthday' })
   @ApiResponse({
-    status: 200,
+    status: Status.Ok,
     description: 'List of suggestions matching the criteria.',
   })
-  async findFiltered(
+  async getFiltered(
     @Query('category') category: string,
     @Query('mood') mood: string,
     @Query('genre') genre: string,
@@ -68,14 +75,13 @@ export class SuggestionController {
 
     this.logger.debug(`Request criteria: ${JSON.stringify(dto.criteria)}`);
 
-    // Cache key stays the same logic
     const cacheKey = this.generateCacheKey(dto);
     const cached = await this.cacheManager.get(cacheKey);
     this.logger.debug(`Cached: ${cacheKey} ${cached}`);
 
     if (cached) {
       this.logger.debug(`Cache HIT: ${cacheKey}`);
-      return cached;
+      return { status: Status.Ok, body: cached as any };
     }
 
     this.logger.debug(`Cache MISS: ${cacheKey}`);
@@ -84,7 +90,7 @@ export class SuggestionController {
     await this.cacheManager.set(cacheKey, result, 1800000); // 30 min
     this.logger.log(`[Response] Returning ${result.items?.length} suggestions`);
 
-    return result;
+    return { status: Status.Ok, body: result };
   }
 
   @Get(':category/:id')
@@ -95,9 +101,9 @@ export class SuggestionController {
     description: 'books | films | games | songs',
   })
   @ApiParam({ name: 'id', example: '42' })
-  @ApiResponse({ status: 200, description: 'Suggestion item.' })
-  @ApiResponse({ status: 404, description: 'Not found.' })
-  async findOne(@Param('category') category: string, @Param('id') id: string) {
+  @ApiResponse({ status: Status.Ok, description: 'Suggestion item.' })
+  @ApiResponse({ status: Status.NotFound, description: 'Not found.' })
+  async getOne(@Param('category') category: string, @Param('id') id: string) {
     this.logger.log(`[Request] GET /suggestion/${category}/${id}`);
 
     const cacheKey = `suggestion:${category}:${id}`;
@@ -105,7 +111,7 @@ export class SuggestionController {
 
     if (cached) {
       this.logger.debug(`Cache HIT: ${cacheKey}`);
-      return cached;
+      return { status: Status.Ok, body: cached as any };
     }
 
     this.logger.log(`[Cache MISS] ${cacheKey} - fetching from service`);
@@ -120,7 +126,7 @@ export class SuggestionController {
     await this.cacheManager.set(cacheKey, result, 3600000); // 1 hour
     this.logger.log(`[Response] ${category}/${id} returned`);
 
-    return result;
+    return { status: Status.Ok, body: result };
   }
 
   private generateCacheKey(dto: FilterItemsDto): string {
