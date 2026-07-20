@@ -5,6 +5,7 @@ export interface CircuitBreakerOptions {
   timeout?: number;
   errorThresholdPercentage?: number;
   resetTimeout?: number;
+  volumeThreshold?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errorFilter?: (error: any) => boolean;
 }
@@ -12,6 +13,7 @@ export interface CircuitBreakerOptions {
 @Injectable()
 export class CircuitBreakerService {
   private readonly logger = new Logger(CircuitBreakerService.name);
+  private readonly breakers = new Map<string, CircuitBreaker>();
 
   getBreaker(
     name: string,
@@ -19,24 +21,33 @@ export class CircuitBreakerService {
     action: (...args: any[]) => Promise<any>,
     options?: Partial<CircuitBreakerOptions>,
   ): CircuitBreaker {
-    this.logger.debug(`CircuitBreakerService ${name} with name ${name}`);
+    if (this.breakers.has(name)) {
+      return this.breakers.get(name)!;
+    }
+
+    this.logger.debug(`Creating circuit breaker: ${name}`);
 
     const defaultOptions: CircuitBreakerOptions = {
       timeout: 3000,
       errorThresholdPercentage: 50,
       resetTimeout: 10000,
+      volumeThreshold: 5,
       ...options,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      errorFilter: options?.errorFilter ?? ((error: any) => {
-        if (error.response?.status) {
-          const status = error.response.status;
-          if (status >= 400 && status < 500) {
-            this.logger.debug(`Ignoring 4xx error (${status}) for circuit breaker`);
-            return true;
+      errorFilter:
+        options?.errorFilter ??
+        ((error: any) => {
+          if (error.response?.status) {
+            const status = error.response.status;
+            if (status >= 400 && status < 500) {
+              this.logger.debug(
+                `Ignoring 4xx error (${status}) for circuit breaker`,
+              );
+              return true;
+            }
           }
-        }
-        return false;
-      }),
+          return false;
+        }),
     };
 
     const breaker = new CircuitBreaker(action, defaultOptions);
@@ -53,6 +64,7 @@ export class CircuitBreakerService {
       this.logger.log(`Circuit breaker ${name} closed`);
     });
 
+    this.breakers.set(name, breaker);
     return breaker;
   }
 
@@ -67,7 +79,7 @@ export class CircuitBreakerService {
     const breaker = this.getBreaker(name, action);
 
     try {
-      return await breaker.fire(...args) as T;
+      return (await breaker.fire(...args)) as T;
     } catch (error) {
       this.logger.error(`Circuit breaker ${name} failed:`, error);
       if (fallback) {
