@@ -174,23 +174,6 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 6.5. Fix JWT Session Persistence (0.5 day)
-
-Currently the Angular `AuthService` holds the JWT only in memory. Any full-page reload (F5, direct URL, bookmark) drops the token and all authenticated API calls return 401 — the user silently appears logged out.
-
-**Interim fix (this phase):**
-
-- Persist the JWT and username to `localStorage` on login/register
-- Restore token from `localStorage` on `AuthService` initialization (constructor or `APP_INITIALIZER`)
-- Clear `localStorage` on logout
-- Update `AuthInterceptor` to read token from the service (no change needed if it already does)
-
-**Note:** `localStorage` is a deliberate interim step — it is readable by JavaScript and therefore vulnerable to XSS. The permanent fix is Phase 3.12 (httpOnly cookies), which makes the token invisible to scripts entirely. Do not skip Phase 3.12 once this is in place.
-
-**Estimate:** 0.5 day (1 developer)
-
----
-
 ### 7. Graceful Shutdown & Infrastructure Reliability (0.5 day)
 
 - Enable shutdown hooks in all NestJS services
@@ -355,17 +338,20 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 
 ### 12. Secure JWT Storage with httpOnly Cookies (2-3 days)
 
+Currently the Angular `UserService` holds the JWT only in memory — any full-page reload loses the session. This step is the permanent fix: move the token out of JavaScript entirely.
+
 **Backend Changes:**
 
-- Update auth-service to set JWT in httpOnly cookie
-- Configure cookie options (secure, sameSite)
-- Update JWT extraction strategy
+- Update auth-service to set JWT in httpOnly cookie on login/register response
+- Configure cookie options (secure, sameSite, path)
+- Update JWT extraction strategy to read from cookie instead of `Authorization` header
 
 **Frontend Changes:**
 
-- Remove localStorage JWT storage
-- Update interceptors to rely on cookies
-- Handle CORS credentials
+- Remove in-memory `accessToken` / `userId` properties from `UserService` (no localStorage either — cookie is sent automatically by the browser)
+- Remove `Authorization` header injection from `AuthInterceptor` (cookie is sent automatically)
+- Enable `withCredentials: true` on all HTTP requests for cross-origin cookie support
+- Handle CORS credentials on API gateway (`credentials: true`, explicit `origin`)
 
 **Estimate:** 2-3 days (1 developer)
 

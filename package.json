@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "start": "docker compose -f infrastructure/docker-compose.yml up -d --build",
+    "start:dev": "docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.dev.yml up -d --build",
     "stop": "docker compose -f infrastructure/docker-compose.yml down && node backend/scripts/stop-and-reset.js",
+    "stop:dev": "docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.dev.yml down",
     "reset": "docker compose -f infrastructure/docker-compose.yml down -v",
     "logs": "docker compose -f infrastructure/docker-compose.yml logs -f",
     "build:all": "nx run-many --target=build --all",
