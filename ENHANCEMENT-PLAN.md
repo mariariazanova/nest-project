@@ -100,7 +100,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ## Phase 1: Developer Experience & Foundations (2-3 weeks)
 
-### 1. Database Migrations Setup (2-3 days)
+### 1.1. Database Migrations Setup (2-3 days)
 
 - Setup TypeORM migrations for all PostgreSQL services
 - Create migration scripts (generate, run, revert)
@@ -115,7 +115,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 2. Structured Logging with Correlation IDs (2-3 days)
+### 1.2. Structured Logging with Correlation IDs (2-3 days)
 
 - Replace NestJS Logger with Winston or Pino
 - Implement JSON structured logging
@@ -126,7 +126,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 3. Request/Response Logging Middleware (1 day)
+### 1.3. Request/Response Logging Middleware (1 day)
 
 - Add request/response interceptors using structured logger
 - Log request body, response, duration
@@ -137,7 +137,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 4. Swagger/OpenAPI Documentation (1-2 days)
+### 1.4. Swagger/OpenAPI Documentation (1-2 days)
 
 - Install @nestjs/swagger in all services
 - Add decorators to controllers and DTOs
@@ -148,7 +148,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 5. API Contract with ts-rest (2-3 days)
+### 1.5. API Contract with ts-rest (2-3 days)
 
 - Install @ts-rest/core, @ts-rest/nest, @ts-rest/angular, @ts-rest/open-api, zod
 - Create libs/shared/contract for API contracts
@@ -162,7 +162,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 6. Development Tools (0.5 day)
+### 1.6. Development Tools (0.5 day)
 
 - Add pgAdmin to docker-compose for PostgreSQL
 - Add Mongo Express for MongoDB
@@ -174,7 +174,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 7. Graceful Shutdown & Infrastructure Reliability (0.5 day)
+### 1.7. Graceful Shutdown & Infrastructure Reliability (0.5 day)
 
 - Enable shutdown hooks in all NestJS services
 - Handle SIGTERM gracefully
@@ -190,13 +190,12 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ## Phase 2: Core Features (3-4 weeks)
 
-### 8. File Uploads for Favorites (1-1.5 weeks)
+### 2.1. File Uploads for Favorites (1-1.5 weeks)
 
 **Backend Changes:**
 
+- Create a new `file-service` microservice for file upload/download/delete
 - Install multer, file validation libraries
-- Extend FavoriteEntity with file metadata fields (filePath, mimeType, fileSize)
-- Create file upload/download endpoints in favorite-service
 - Configure file storage (local volumes or S3)
 - Add file validation (size limits, MIME types)
 
@@ -211,14 +210,14 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 9. Real-time Notifications with WebSocket (1 week)
+### 2.2. Real-time Notifications with WebSocket (1 week)
 
 **Backend Changes:**
 
 - Install @nestjs/websockets, socket.io
 - Create notification-service or add to API Gateway
 - Implement WebSocket gateway for real-time events
-- Send notifications for: new suggestions, favorites added, system alerts
+- Send notifications for: new suggestions, favorites added, system alerts, file upload progress and completion (from `file-service`)
 
 **Frontend Changes:**
 
@@ -231,7 +230,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 10. Kafka Event Streaming for Analytics (1-1.5 weeks)
+### 2.3. Kafka Event Streaming for Analytics (1-1.5 weeks)
 
 **Backend Changes:**
 
@@ -252,7 +251,7 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 ---
 
-### 11. Internationalization (i18n) — Multiple Languages (2-3 days)
+### 2.4. Internationalization (i18n) — Multiple Languages (2-3 days)
 
 Add multi-language support to the Angular frontend using `@angular/localize` for compile-time locale builds, or `ngx-translate` for runtime language switching without a full page reload.
 
@@ -279,7 +278,7 @@ Add multi-language support to the Angular frontend using `@angular/localize` for
 
 ---
 
-### 12. `UserSuggestionEntity.criteria` JSONB → FK columns refactor (1-2 days)
+### 2.5. `UserSuggestionEntity.criteria` JSONB → FK columns refactor (1-2 days)
 
 `criteria` is currently stored as `jsonb` with a fixed structure `{ mood, category, genre, event }` that references existing classification entities. This loses referential integrity (invalid values accepted silently) and prevents per-field indexing.
 
@@ -296,7 +295,7 @@ Add multi-language support to the Angular frontend using `@angular/localize` for
 
 ---
 
-### 13. Full-text search indexes for suggestion-service (0.5 day)
+### 2.6. Full-text search indexes for suggestion-service (0.5 day)
 
 The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix queries (`LIKE 'term%'`). Mid-string search (`ILIKE '%term%'`) requires a PostgreSQL GIN index with the `pg_trgm` extension.
 
@@ -316,7 +315,7 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 
 ## Phase 3: Security Foundation (2 weeks)
 
-### 11. RBAC Admin Role with Separate Admin UI + API (1-1.5 weeks)
+### 3.1. RBAC Admin Role with Separate Admin UI + API (1-1.5 weeks)
 
 **Backend Changes:**
 
@@ -336,7 +335,7 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 
 ---
 
-### 12. Secure JWT Storage with httpOnly Cookies (2-3 days)
+### 3.2. Secure JWT Storage with httpOnly Cookies (2-3 days)
 
 Currently the Angular `UserService` holds the JWT only in memory — any full-page reload loses the session. This step is the permanent fix: move the token out of JavaScript entirely.
 
@@ -357,7 +356,7 @@ Currently the Angular `UserService` holds the JWT only in memory — any full-pa
 
 ---
 
-### 13. Supply Chain Security Scanner (1-2 days)
+### 3.3. Supply Chain Security Scanner (1-2 days)
 
 - Setup Snyk or Trivy in GitHub Actions
 - Configure dependency scanning on every PR
@@ -368,7 +367,7 @@ Currently the Angular `UserService` holds the JWT only in memory — any full-pa
 
 ---
 
-### 14. Secrets Management (1-2 days)
+### 3.4. Secrets Management (1-2 days)
 
 - Replace hardcoded credentials in docker-compose.yml
 - Use Docker Secrets or environment variable files
@@ -379,7 +378,7 @@ Currently the Angular `UserService` holds the JWT only in memory — any full-pa
 
 ---
 
-### 15. SSL/TLS Configuration (1-2 days)
+### 3.5. SSL/TLS Configuration (1-2 days)
 
 - Generate SSL certificates (Let's Encrypt or self-signed)
 - Configure Nginx reverse proxy with HTTPS
@@ -388,13 +387,52 @@ Currently the Angular `UserService` holds the JWT only in memory — any full-pa
 
 **Estimate:** 1-2 days (1 developer)
 
-**Phase 3 Total:** 2.5-4 weeks
+---
+
+### 3.6. Virus Scanning with ClamAV (1 day)
+
+Adds ClamAV antivirus scanning to `file-service` as an optional layer on top of the magic bytes + MIME allowlist validation already in place from Phase 2.1. Scanning is opt-in via environment variable so it can be disabled locally without slowing down dev startup.
+
+**Infrastructure:**
+
+- Add `clamav/clamav` container to `infrastructure/docker-compose.yml`; expose `clamd` daemon on port 3310
+- Add health check — `clamd` is ready only after `freshclam` downloads virus definitions (~30-60s on first start)
+- `file-service` depends on `clamav` only when `ENABLE_AV_SCAN=true`
+- Add `clamav` to `infrastructure/docker-compose.dev.yml` (or as a separate profile) so it starts only when explicitly requested
+
+**`file-service` changes:**
+
+- Install `node-clamscan`
+- In `FileService.upload()`, after magic bytes validation, before `repo.save()` (file is already on disk at `file.path` via `ProgressDiskStorage`):
+  ```typescript
+  if (this.configService.get('ENABLE_AV_SCAN') === 'true') {
+    const { isInfected, viruses } = await this.clamscan.scanBuffer(file.buffer);
+    if (isInfected) {
+      throw new BadRequestException(`File rejected: ${viruses.join(', ')}`);
+    }
+  }
+  ```
+- `ClamScan` instance configured with `clamd` host/port from env vars (`CLAMD_HOST`, `CLAMD_PORT`)
+
+**Environment variables:**
+
+| Variable         | Dev default | Prod default |
+| ---------------- | ----------- | ------------ |
+| `ENABLE_AV_SCAN` | `false`     | `true`       |
+| `CLAMD_HOST`     | `clamav`    | `clamav`     |
+| `CLAMD_PORT`     | `3310`      | `3310`       |
+
+**Definition updates:** `freshclam` runs inside the `clamav/clamav` container automatically and updates definitions daily. In production, ensure the container has outbound internet access to `database.clamav.net`.
+
+**Estimate:** 1 day (1 developer)
+
+**Phase 3 Total:** 3-5 weeks
 
 ---
 
 ## Phase 4: Testing Infrastructure (2 weeks)
 
-### 16. Playwright E2E Testing — Frontend + Backend (4-6 days)
+### 4.1. Playwright E2E Testing — Frontend + Backend (4-6 days)
 
 Playwright covers two layers:
 
@@ -422,7 +460,7 @@ Playwright covers two layers:
 
 ---
 
-### 17. BDD/Cucumber Framework (3-5 days)
+### 4.2. BDD/Cucumber Framework (3-5 days)
 
 - Install cucumber, @cucumber/cucumber
 - Create feature files for user stories
@@ -433,7 +471,7 @@ Playwright covers two layers:
 
 ---
 
-### 17. Backend Integration Tests (1-2 days)
+### 4.3. Backend Integration Tests (1-2 days)
 
 Test each NestJS service in isolation with real infrastructure — verify both HTTP response and database side effects, with no external docker-compose required.
 
@@ -460,7 +498,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ---
 
-### 18. Coverage Thresholds Configuration (0.5 day)
+### 4.4. Coverage Thresholds Configuration (0.5 day)
 
 - Configure Jest coverage collection in all services
 - Set minimum coverage thresholds (70% branches, functions, lines)
@@ -471,7 +509,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ---
 
-### 19. SonarQube Integration (2-3 days)
+### 4.5. SonarQube Integration (2-3 days)
 
 - Setup SonarQube server (Docker or cloud)
 - Configure sonar-scanner in GitHub Actions
@@ -483,7 +521,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ---
 
-### 20. Commit Message Linting — commitlint (0.5 day)
+### 4.6. Commit Message Linting — commitlint (0.5 day)
 
 - Install `@commitlint/cli` and `@commitlint/config-conventional`
 - Configure conventional commit format (`feat:`, `fix:`, `chore:`, `docs:`, etc.)
@@ -501,7 +539,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ## Phase 5: Advanced Features (2-3 weeks)
 
-### 20. GraphQL Layer for Favorites/Suggestions (1-1.5 weeks)
+### 5.1. GraphQL Layer for Favorites/Suggestions (1-1.5 weeks)
 
 - Install @nestjs/graphql, apollo-server
 - Create GraphQL schemas for Favorite, Suggestion
@@ -513,7 +551,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ---
 
-### 21. AI Chatbot Assistant (1-1.5 weeks)
+### 5.2. AI Chatbot Assistant (1-1.5 weeks)
 
 - Integrate OpenAI API or similar LLM service
 - Create chatbot-service with conversation endpoints
@@ -528,7 +566,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ## Phase 6: DevOps & Deployment (2-2.5 weeks)
 
-### 21. Database Backup & Restore Strategy (1-2 days)
+### 6.1. Database Backup & Restore Strategy (1-2 days)
 
 - Configure automated PostgreSQL backups
 - Setup MongoDB backup automation
@@ -540,7 +578,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 
 ---
 
-### 22. Terraform IaC (1 week)
+### 6.2. Terraform IaC (1 week)
 
 - Write Terraform configs for AWS/GCP/Azure:
   - EC2/Compute instances for services
@@ -549,12 +587,13 @@ Test each NestJS service in isolation with real infrastructure — verify both H
   - ElastiCache for Redis
   - Load balancers
 - Setup separate environments (dev, staging, prod)
+- **Decide production file storage backend** — the local Docker volume used in Phase 2.1 (File Uploads) does not survive in multi-instance or managed container environments (ECS, Fargate, Kubernetes). Provision S3/GCS/Azure Blob or a shared network filesystem (e.g. EFS on AWS); update `FileService` in `file-service` to use the chosen SDK
 
 **Estimate:** 5-7 days (1 developer)
 
 ---
 
-### 23. Frontend Production Build Configuration (0.5 day)
+### 6.3. Frontend Production Build Configuration (0.5 day)
 
 Wire Angular environment files so the frontend can point at the correct API gateway URL per environment without requiring a code change.
 
@@ -572,7 +611,7 @@ Wire Angular environment files so the frontend can point at the correct API gate
 
 ---
 
-### 24. Production Deployment (3-5 days)
+### 6.4. Production Deployment (3-5 days)
 
 - Setup CI/CD pipeline (GitHub Actions)
 - Configure automated testing before deploy
@@ -580,6 +619,7 @@ Wire Angular environment files so the frontend can point at the correct API gate
 - Database migration strategy
 - Add migration CI gate: run `migration:show` in CI pipeline and fail the build if any pending migrations exist that are not in the current deployment artifact (prevents schema drift between code and DB)
 - Blue-green or canary deployment
+- **Verify file storage backend is configured** — confirm the S3/GCS/EFS decision from Phase 6.2 is wired into the `file-service` deployment (env vars, IAM roles/service accounts, bucket policy)
 
 **Estimate:** 3-5 days (1 developer)
 
