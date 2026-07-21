@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { TsRestModule } from '@ts-rest/nest';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
+import { FileEntity } from './file/entities/file.entity';
 import { MetricsModule } from '@suggestify/backend/metrics';
 import { LoggerModule } from '@suggestify/backend/logger';
 import { SocketGateway } from './socket/socket.gateway';
@@ -30,7 +31,7 @@ import { SocketGateway } from './socket/socket.gateway';
         username: config.get<string>('DB_USER'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_NAME'),
-        entities: [],
+        entities: [FileEntity],
         synchronize: false,
         migrationsRun: true,
         migrations: [],

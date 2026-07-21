@@ -32,31 +32,21 @@ Introduces a new general-purpose `file-service` microservice that handles upload
 
 ## Deviations from ENHANCEMENT-PLAN.md
 
-`ENHANCEMENT-PLAN.md` Phase 2.1 was a high-level sketch written before detailed requirements were known. The following decisions changed during planning. `ENHANCEMENT-PLAN.md` is intentionally left unchanged — it is the original intent record.
+`ENHANCEMENT-PLAN.md` Phase 2.1 is a high-level sketch. The following decisions document implementation details that go beyond what the sketch specifies.
 
 ---
 
-### 1. Dedicated `file-service` microservice instead of extending `favorite-service`
+### 1. Multiple files per entity instead of one
 
-**Original:** "Create file upload/download endpoints in `favorite-service`; extend `FavoriteEntity` with file metadata fields (`filePath`, `mimeType`, `fileSize`)."
+**Original:** `ENHANCEMENT-PLAN.md` says "Create a new `file-service` microservice for file upload/download/delete" — does not specify how many files per entity or how the association is stored.
 
-**Decision:** New `file-service` microservice with its own `postgres-files` database. `FavoriteEntity` is not changed at all.
+**Decision:** Multiple files per entity — `FileEntity` is its own table with `entityType` + `entityId` columns; `GET /files?entityType=favorite&entityId=:id` returns an array.
 
-**Why:** Putting file storage in `favorite-service` ties file concerns to one domain. The moment another entity (suggestion cover image, user avatar) needs file upload, you'd either duplicate the logic or create an awkward cross-service dependency. A dedicated `file-service` knows nothing about favorites — the association is just data (`entityType='favorite'`, `entityId=:uuid`) stored on `FileEntity`. Any future entity uses the same endpoint with a different `entityType`, with no code changes.
-
----
-
-### 2. Multiple files per entity instead of one
-
-**Original:** Implied a single file per favorite (single `filePath` column on `FavoriteEntity`).
-
-**Decision:** Multiple files per entity — `FileEntity` is its own table; `GET /files?entityType=favorite&entityId=:id` returns an array.
-
-**Why:** The requirement was clarified during planning: a user should be able to attach multiple files (e.g. a photo and a PDF) to the same favorite. A single `filePath` column on `FavoriteEntity` cannot support this without a schema redesign. The separate `FileEntity` table handles N files per entity from day one.
+**Why:** A user should be able to attach multiple files (e.g. a photo and a PDF) to the same favorite. A single FK or path column cannot support this without a schema redesign later. The `entityType`/`entityId` pattern also makes the service reusable for any entity type (suggestions, user avatars) with no schema changes.
 
 ---
 
-### 3. Custom `ProgressDiskStorage` instead of default Multer storage
+### 2. Custom `ProgressDiskStorage` instead of default Multer storage
 
 **Original:** "Install multer, file validation libraries" — implied default `memoryStorage` (entire file buffered in RAM).
 
@@ -66,7 +56,7 @@ Introduces a new general-purpose `file-service` microservice that handles upload
 
 ---
 
-### 4. Layered security instead of basic size + MIME validation
+### 3. Layered security instead of basic size + MIME validation
 
 **Original:** "Add file validation (size limits, MIME types)."
 
@@ -83,7 +73,7 @@ Introduces a new general-purpose `file-service` microservice that handles upload
 
 ---
 
-### 5. Upload progress via Socket.IO (not mentioned in original)
+### 4. Upload progress via Socket.IO (not mentioned in original)
 
 **Original:** No mention of upload progress.
 
@@ -93,7 +83,7 @@ Introduces a new general-purpose `file-service` microservice that handles upload
 
 ---
 
-### 6. Cascade delete via RabbitMQ (not mentioned in original)
+### 5. Cascade delete via RabbitMQ (not mentioned in original)
 
 **Original:** No mention of what happens to files when a favorite is deleted.
 
@@ -103,7 +93,7 @@ Introduces a new general-purpose `file-service` microservice that handles upload
 
 ---
 
-### 7. S3 deferred, migration path made explicit
+### 6. S3 deferred, migration path made explicit
 
 **Original:** "Configure file storage (local volumes or S3)" — treated as a Phase 2.1 choice.
 
@@ -115,7 +105,15 @@ Introduces a new general-purpose `file-service` microservice that handles upload
 
 ## Why This Matters
 
-A dedicated `file-service` keeps file storage concerns out of every other microservice. `FavoriteEntity` is not touched — it stores no `fileId`. Any future entity (suggestion cover images, user avatars) uses the same upload endpoint with a different `entityType`. Cascade delete via RabbitMQ means deleting a favorite automatically cleans up its file without any frontend orchestration.
+### Why a dedicated `file-service` and not `favorite-service`
+
+Putting file upload logic inside `favorite-service` would tie it to one domain. The moment another entity needs file storage — a suggestion cover image, a user avatar — the logic would have to be duplicated or pulled out anyway. A dedicated `file-service` knows nothing about favorites: the association is just data (`entityType='favorite'`, `entityId=:uuid`) stored on `FileEntity`. Any future entity type uses the same six endpoints with a different `entityType` value, with no code or schema changes in either `file-service` or the calling service.
+
+There is also a separation-of-concerns benefit at the infrastructure level: `file-service` has its own `postgres-files` database, its own `uploads` volume, and its own RabbitMQ consumer queue. A problem in file storage (disk full, slow scan) cannot bring down the favorites feature, and the file-service can be scaled independently if upload throughput demands it.
+
+### Implementation decisions
+
+`FavoriteEntity` is not touched and stores no file reference. Multiple files per entity are supported from day one via the `FileEntity` table. Cascade delete via RabbitMQ means deleting a favorite automatically cleans up its files without any frontend orchestration.
 
 ---
 
@@ -186,7 +184,7 @@ await app.listen(PORT);
 
 ---
 
-### Step 2: `FileEntity` + migration (45 min)
+### Step 2: `FileEntity` (45 min)
 
 `apps/file-service/src/file/entities/file.entity.ts`:
 
@@ -230,15 +228,7 @@ export class FileEntity {
 export class FileEntity { ... }
 ```
 
-Create `apps/file-service/src/data-source.ts` following the same pattern as `auth-service`. Generate and apply the initial migration:
-
-```bash
-docker compose -f infrastructure/docker-compose.yml up postgres-files -d
-
-npm exec nx -- run file-service:"migration:generate" --args="--name=CreateFilesTable"
-# Review generated SQL — verify the composite index is included
-npm exec nx -- run file-service:"migration:run"
-```
+`apps/file-service/src/data-source.ts` was created in Step 1 following the same pattern as `auth-service`. Migration generation requires a live `postgres-files` database, so it is deferred to Step 6 once Docker Compose is set up.
 
 ---
 
@@ -524,6 +514,25 @@ postgres-files:
 volumes:
   postgres-files-data:
   uploads:
+```
+
+After adding the containers, start `postgres-files` and generate + apply the migration:
+
+```bash
+docker compose -f infrastructure/docker-compose.yml up postgres-files -d
+
+npm exec nx -- run file-service:"migration:generate" --args="--name=CreateFilesTable"
+# Review generated SQL — verify bigint for size, composite index on (entityType, entityId)
+npm exec nx -- run file-service:"migration:run"
+```
+
+Wire the generated migration class into `app.module.ts`:
+
+```typescript
+import { CreateFilesTable<timestamp> } from './migrations/<timestamp>-CreateFilesTable';
+
+// inside TypeOrmModule.forRootAsync useFactory:
+migrations: [CreateFilesTable<timestamp>],
 ```
 
 ---
