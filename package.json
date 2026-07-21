@@ -33,6 +33,8 @@
     "@nx/jest": "23.1.0-beta.4",
     "@nx/js": "23.1.0-beta.4",
     "@nx/nest": "^23.1.0-beta.4",
+    "@nx/node": "23.1.0-beta.4",
+    "@nx/web": "23.1.0-beta.4",
     "@nx/webpack": "23.1.0-beta.4",
     "@swc/helpers": "~0.5.18",
     "@types/bcrypt": "^6.0.0",
@@ -62,7 +64,8 @@
     "typescript-eslint": "^8.62.0",
     "vitest": "^4.0.8",
     "webpack": "^5.108.2",
-    "webpack-cli": "^7.0.3"
+    "webpack-cli": "^7.0.3",
+    "webpack-dev-server": "^5.2.1"
   },
   "lint-staged": {
     "*.{ts,js,html}": [
