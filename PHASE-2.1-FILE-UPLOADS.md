@@ -146,7 +146,7 @@ import { LoggerModule } from '@suggestify/backend/logger';
       inject: [ConfigService, SocketGateway],
       useFactory: (config: ConfigService, gateway: SocketGateway) => ({
         storage: new ProgressDiskStorage(config.get('UPLOAD_TEMP_DIR'), gateway),
-        limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5 GB — Multer aborts mid-stream if exceeded
+        limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5 GB custom limit — Multer aborts the stream if exceeded
       }),
     }),
     HealthModule,                               // local ./health/health.module (same pattern as other services)
@@ -384,6 +384,69 @@ Key differences from `memoryStorage`: `file.buffer` is never populated — the f
 
 ---
 
+### Step 4: ts-rest contract — `file.contract.ts` (1-2 hours)
+
+**`libs/shared/contract/src/lib/schemas.ts`** — add `FileSchema`:
+
+```typescript
+export const FileSchema = z.object({
+  id: z.string().uuid(),
+  originalName: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+  uploadedBy: z.string(),
+  entityType: z.string().optional(),
+  entityId: z.string().uuid().optional(),
+  createdAt: z.union([z.string(), z.date()]),
+});
+```
+
+**`libs/shared/contract/src/lib/file.contract.ts`** — new contract:
+
+```typescript
+export const fileContract = c.router({
+  upload: {
+    method: 'POST',
+    path: '/files',
+    contentType: 'multipart/form-data',
+    body: z.object({
+      file: z.any(),
+      entityType: z.string().optional(),
+      entityId: z.string().uuid().optional(),
+    }),
+    responses: { [Status.Created]: FileSchema },
+  },
+  getByEntity: {
+    method: 'GET',
+    path: '/files',
+    query: z.object({
+      entityType: z.string(),
+      entityId: z.string().uuid(),
+    }),
+    responses: { [Status.Ok]: z.array(FileSchema) },
+  },
+  getMetadata: {
+    method: 'GET',
+    path: '/files/:id',
+    responses: { [Status.Ok]: FileSchema },
+  },
+  download: {
+    method: 'GET',
+    path: '/files/:id/download',
+    responses: { [Status.Ok]: z.object({ downloadUrl: z.string() }) },
+  },
+  delete: {
+    method: 'DELETE',
+    path: '/files/:id',
+    responses: { [Status.NoContent]: c.noBody() },
+  },
+});
+```
+
+Export from `libs/shared/contract/src/index.ts`.
+
+---
+
 ### Step 5: `FileController` — 6 endpoints + cascade consumer (2-3 hours)
 
 `apps/file-service/src/file/file.controller.ts`:
@@ -582,69 +645,6 @@ const canActivate = (context: ExecutionContext) => {
 ```
 
 Read the actual guard implementation before adding the exemption — the exact approach depends on how it is currently structured.
-
----
-
-### Step 4: ts-rest contract — `file.contract.ts` (1-2 hours)
-
-**`libs/shared/contract/src/lib/schemas.ts`** — add `FileSchema`:
-
-```typescript
-export const FileSchema = z.object({
-  id: z.string().uuid(),
-  originalName: z.string(),
-  mimeType: z.string(),
-  size: z.number(),
-  uploadedBy: z.string(),
-  entityType: z.string().optional(),
-  entityId: z.string().uuid().optional(),
-  createdAt: z.union([z.string(), z.date()]),
-});
-```
-
-**`libs/shared/contract/src/lib/file.contract.ts`** — new contract:
-
-```typescript
-export const fileContract = c.router({
-  upload: {
-    method: 'POST',
-    path: '/files',
-    contentType: 'multipart/form-data',
-    body: z.object({
-      file: z.any(),
-      entityType: z.string().optional(),
-      entityId: z.string().uuid().optional(),
-    }),
-    responses: { [Status.Created]: FileSchema },
-  },
-  getByEntity: {
-    method: 'GET',
-    path: '/files',
-    query: z.object({
-      entityType: z.string(),
-      entityId: z.string().uuid(),
-    }),
-    responses: { [Status.Ok]: z.array(FileSchema) },
-  },
-  getMetadata: {
-    method: 'GET',
-    path: '/files/:id',
-    responses: { [Status.Ok]: FileSchema },
-  },
-  download: {
-    method: 'GET',
-    path: '/files/:id/download',
-    responses: { [Status.Ok]: z.object({ downloadUrl: z.string() }) },
-  },
-  delete: {
-    method: 'DELETE',
-    path: '/files/:id',
-    responses: { [Status.NoContent]: c.noBody() },
-  },
-});
-```
-
-Export from `libs/shared/contract/src/index.ts`.
 
 ---
 

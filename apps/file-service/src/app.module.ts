@@ -3,14 +3,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
+import { MulterModule } from '@nestjs/platform-express';
 
 import { TsRestModule } from '@ts-rest/nest';
 import { HealthModule } from './health/health.module';
 import { ConsulModule } from '@suggestify/backend/consul';
-import { FileEntity } from './file/entities/file.entity';
 import { MetricsModule } from '@suggestify/backend/metrics';
 import { LoggerModule } from '@suggestify/backend/logger';
+import { FileEntity } from './file/entities/file.entity';
+import { FileModule } from './file/file.module';
 import { SocketGateway } from './socket/socket.gateway';
+import { ProgressDiskStorage } from './file/progress-disk-storage';
 
 @Module({
   imports: [
@@ -55,6 +58,20 @@ import { SocketGateway } from './socket/socket.gateway';
       }),
     }),
 
+    // registerAsync required: uploadDir and SocketGateway are not available at static module init time
+    MulterModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService, SocketGateway],
+      useFactory: (config: ConfigService, gateway: SocketGateway) => ({
+        storage: new ProgressDiskStorage(
+          config.get<string>('UPLOAD_TEMP_DIR', '/uploads/temp'),
+          gateway,
+        ),
+        limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5 GB custom limit — Multer aborts the stream if exceeded
+      }),
+    }),
+
+    FileModule,
     HealthModule,
 
     ConsulModule.forRoot({
@@ -65,6 +82,9 @@ import { SocketGateway } from './socket/socket.gateway';
     MetricsModule,
     LoggerModule.forRoot({ serviceName: 'file-service' }),
   ],
+  // SocketGateway here serves MulterModule.registerAsync injection only.
+  // FileModule has its own instance for FileService injection.
+  // Both are no-op stubs in Phase 2.1; Phase 2.2 consolidates into a @Global() SocketModule.
   providers: [SocketGateway],
 })
 export class AppModule {}
