@@ -12,6 +12,7 @@ import { MetricsModule } from '@suggestify/backend/metrics';
 import { LoggerModule } from '@suggestify/backend/logger';
 import { FileEntity } from './file/entities/file.entity';
 import { FileModule } from './file/file.module';
+import { SocketModule } from './socket/socket.module';
 import { SocketGateway } from './socket/socket.gateway';
 import { ProgressDiskStorage } from './file/progress-disk-storage';
 
@@ -73,6 +74,7 @@ import { ProgressDiskStorage } from './file/progress-disk-storage';
 
     FileModule,
     HealthModule,
+    SocketModule,
 
     ConsulModule.forRoot({
       serviceName: 'file-service',
@@ -82,9 +84,5 @@ import { ProgressDiskStorage } from './file/progress-disk-storage';
     MetricsModule,
     LoggerModule.forRoot({ serviceName: 'file-service' }),
   ],
-  // SocketGateway here serves MulterModule.registerAsync injection only.
-  // FileModule has its own instance for FileService injection.
-  // Both are no-op stubs in Phase 2.1; Phase 2.2 consolidates into a @Global() SocketModule.
-  providers: [SocketGateway],
 })
 export class AppModule {}

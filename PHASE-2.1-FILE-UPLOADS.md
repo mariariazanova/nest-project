@@ -311,7 +311,7 @@ export class SocketGateway {
 
 #### `FileService` methods
 
-`apps/file-service/src/file/file.service.ts` — six methods:
+`apps/file-service/src/file/file.service.ts` — five methods:
 
 ```typescript
 async upload(userId: string, file: Express.Multer.File, entityType?: string, entityId?: string): Promise<FileEntity>
@@ -378,9 +378,9 @@ Key differences from `memoryStorage`: `file.buffer` is never populated — the f
 
 - `findByEntity` — `WHERE entity_type = $1 AND entity_id = $2`; returns array (supports multiple files per entity in future).
 - `deleteByEntity` — find all files matching `entityType` + `entityId`, delete each from disk + DB. Used by the RabbitMQ cascade consumer.
-- `createDownloadToken` — verify the file belongs to `userId`, sign a JWT (`{ fileId, storagePath }`, 60s TTL) using `JwtService`, return the token.
-- `validateTokenAndGetPath` — verify the JWT, confirm `fileId` matches, check the file exists on disk, return the absolute path.
-- `delete` — verify ownership, delete file from disk (`fs.unlinkSync`), delete `FileEntity` from DB.
+- `createDownloadToken` — verify ownership (`WHERE id = fileId AND uploadedBy = userId`), sign a 60-second JWT `{ fileId, storagePath }`. Returns the token string.
+- `validateTokenAndGetPath` — verify + decode the JWT; check `payload.fileId === fileId`; check file exists on disk. Returns `storagePath`. Throws `ForbiddenException` on invalid/expired token.
+- `delete` — verify ownership, delete file from disk (`fs.rmSync`), delete `FileEntity` from DB.
 
 ---
 
@@ -434,6 +434,7 @@ export const fileContract = c.router({
     method: 'GET',
     path: '/files/:id/download',
     responses: { [Status.Ok]: z.object({ downloadUrl: z.string() }) },
+    summary: 'Get a short-lived signed download URL for a file',
   },
   delete: {
     method: 'DELETE',
@@ -444,6 +445,8 @@ export const fileContract = c.router({
 ```
 
 Export from `libs/shared/contract/src/index.ts`.
+
+`GET /files/:id/stream` is intentionally **not** in the contract — it returns binary bytes, not JSON. The frontend calls `api.file.download()` (contract) to get a signed URL, then navigates to that URL so the browser handles the download directly. The `stream` endpoint validates a capability token in the query string rather than the session JWT, because browsers cannot send `Authorization` headers on direct navigation.
 
 ---
 
@@ -491,17 +494,21 @@ async getByEntity()
 
 Returns: `FileSchema`
 
-**`GET /files/:id/download`** — returns signed download URL (ts-rest)
+**`GET /files/:id/download`** — returns a short-lived signed download URL (ts-rest)
 
-Returns: `z.object({ downloadUrl: z.string() })`
+Signs a 60-second JWT `{ fileId, storagePath }` (capability token), embeds it as `?token=` in the path, and returns `{ downloadUrl: '/v1/files/:id/stream?token=<jwt>' }`. Only the file owner can obtain a URL (`createDownloadToken` verifies `uploadedBy === userId`). The frontend navigates to that URL; the browser handles the download without needing an `Authorization` header.
 
-**`GET /files/:id/stream?token=`** — streams bytes (plain NestJS, outside ts-rest)
+**`GET /files/:id/stream`** — streams binary bytes (plain NestJS, outside ts-rest)
+
+Binary response — not suited for JSON-contract clients. Auth is via capability token in the query string instead of the session JWT because browsers cannot send `Authorization` headers on direct navigation.
 
 ```typescript
+// Plain NestJS endpoint — outside ts-rest because browsers cannot send Authorization
+// headers on direct navigation. Auth is via capability token in query param instead.
 @Get(':id/stream')
 async stream(@Param('id') id: string, @Query('token') token: string, @Res() res: Response) {
   const filePath = await this.fileService.validateTokenAndGetPath(token, id);
-  res.sendFile(filePath);
+  res.sendFile(path.resolve(filePath));
 }
 ```
 
@@ -607,44 +614,7 @@ Add `file-service` to the API gateway following the same pattern as `favorite-se
 - Proxy route: `GET|POST|DELETE /v1/files/*` → `file-service`
 - Circuit breaker name: `file-service`
 - Consul discovery key: `file-service`
-
-**Stream endpoint JWT exception:**
-
-`GET /v1/files/:id/stream?token=` must be exempted from the gateway's session JWT (`Authorization` header) check. This is intentional and safe — the browser navigates to this URL directly (e.g. via `<a href="...">`) and cannot attach an `Authorization` header during navigation.
-
-Authentication is still enforced, just via a different mechanism — a **capability token** (short-lived JWT, 60s TTL, signed with the same `JWT_SECRET`) passed in the query param. The only way to obtain a valid capability token is to call `GET /files/:id/download` first, which is session-JWT protected. So the security chain is:
-
-```
-GET /files/:id/download   ← gateway checks session JWT ✅
-  → file-service validates file ownership
-  → returns { downloadUrl: '...?token=<signed-jwt>' }
-
-GET /files/:id/stream?token=  ← gateway skips session JWT (browser navigation)
-  → file-service validates capability token: correct signature, not expired, correct fileId ✅
-  → streams file
-```
-
-Unauthenticated users cannot produce a valid capability token. This is the same pattern used by AWS S3 presigned URLs.
-
-**How to implement the exemption in the gateway:**
-
-Check how the existing JWT guard is applied — look at `apps/api-gateway/src/` for a guard decorated with `@Injectable()` that implements `CanActivate` and reads the `Authorization` header. It is most likely applied globally in `main.ts` via `app.useGlobalGuards()` or in `AppModule` via `APP_GUARD`. Add a route exclusion:
-
-```typescript
-// If using a custom guard with route metadata:
-@SetMetadata('isPublic', true) // or use a @Public() decorator
-// on the proxy handler for /files/:id/stream
-
-// If using app.useGlobalGuards() — switch to APP_GUARD provider
-// so NestJS DI can resolve route metadata in the guard:
-const canActivate = (context: ExecutionContext) => {
-  const req = context.switchToHttp().getRequest();
-  if (req.path.match(/\/v1\/files\/[^/]+\/stream/)) return true; // capability token auth, handled by file-service
-  // ... existing JWT check
-};
-```
-
-Read the actual guard implementation before adding the exemption — the exact approach depends on how it is currently structured.
+- **JWT exception**: `GET /v1/files/:id/stream` must bypass the session JWT check — this endpoint is reached via direct browser navigation (capability token in query param `?token=`) and the browser cannot send an `Authorization` header. Add this path to the gateway's JWT whitelist (same mechanism as `/v1/auth/login` and `/v1/auth/register`). Token validity is enforced inside `file-service` via `validateTokenAndGetPath`.
 
 ---
 
@@ -712,15 +682,12 @@ export class FileService {
     ).pipe(map(({ body }) => body));
   }
 
-  download(fileId: string, fileName: string): void {
-    from(this.api.file.download({ params: { id: fileId } }))
-      .pipe(map(({ body }) => body.downloadUrl))
-      .subscribe((url) => {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        a.click();
-      });
+  download(fileId: string): Observable<string> {
+    // Call contract endpoint to get a short-lived signed URL, then the caller
+    // navigates to it — browser handles the download without an Authorization header.
+    return from(this.api.file.download({ params: { id: fileId } })).pipe(
+      map(({ body }) => body.downloadUrl),
+    );
   }
 
   delete(fileId: string): Observable<void> {
@@ -799,7 +766,12 @@ onFileSelected(event: Event, favoriteId: string): void {
 }
 
 downloadFile(fileId: string, fileName: string): void {
-  this.fileService.download(fileId, fileName);
+  this.fileService.download(fileId).subscribe(downloadUrl => {
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = fileName;
+    a.click();
+  });
 }
 
 deleteFile(fileId: string, favoriteId: string): void {
@@ -875,9 +847,10 @@ docker logs file-service --tail 20  # confirm Consul registration + RabbitMQ con
 - [ ] `POST /v1/files` with path traversal filename — 201; `originalName` in DB is sanitized
 - [ ] Files stored at `/uploads/{userId}/{fileId}/file` (no user input in path)
 - [ ] `GET /v1/files?entityType=favorite&entityId=:id` — returns array with the uploaded file
-- [ ] `GET /v1/files/:id/download` — 200 with `{ downloadUrl }`
-- [ ] `GET /v1/files/:id/stream?token=` — streams binary with correct `Content-Type`
-- [ ] `GET /v1/files/:id/stream` with expired token — 401
+- [ ] `GET /v1/files/:id/download` returns `{ downloadUrl }` with capability token query param
+- [ ] `GET /v1/files/:id/stream?token=` with valid capability token — streams binary with correct `Content-Type`
+- [ ] `GET /v1/files/:id/stream?token=` with invalid/expired token — 403
+- [ ] `GET /v1/files/:id/download` for a file owned by another user — 404 (token not issued)
 - [ ] `DELETE /v1/files/:id` — 204; entity removed from DB; file deleted from disk
 - [ ] Files persist after `docker restart file-service`
 
@@ -891,7 +864,7 @@ docker logs file-service --tail 20  # confirm Consul registration + RabbitMQ con
 ### Contract
 
 - [ ] `FileSchema` exported from contract library
-- [ ] `fileContract` has `upload`, `getByEntity`, `getMetadata`, `download`, `delete` routes
+- [ ] `fileContract` has `upload`, `getByEntity`, `getMetadata`, `download`, `delete` routes (stream is outside contract — binary bytes)
 - [ ] `nx build contract` — 0 TypeScript errors
 
 ### Frontend
@@ -939,19 +912,19 @@ git checkout apps/frontend/src/app/components/favorites/
 
 ## Timeline Summary
 
-| Step      | Task                                                                                                                                                | Time                                                            |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| 1         | Scaffold `file-service` (AppModule, Consul, metrics, Pino, Multer, RabbitMQ)                                                                        | 2-3 hours                                                       |
-| 2         | `FileEntity` + composite index + data-source + migration                                                                                            | 45 min                                                          |
-| 3         | `FileService` + `ProgressDiskStorage` — upload (magic bytes, sanitization, UUID path), findByEntity, deleteByEntity, download token, stream, delete | 2-3 hours                                                       |
-| 4         | ts-rest contract — `file.contract.ts` + `FileSchema`                                                                                                | 1-2 hours                                                       |
-| 5         | `FileController` — 6 endpoints + RabbitMQ cascade consumer                                                                                          | 2-3 hours                                                       |
-| 6         | Docker Compose — `postgres-files`, `file-service`, `uploads` volume                                                                                 | 1-2 hours                                                       |
-| 7         | API gateway — proxy route + circuit breaker + stream endpoint JWT exception                                                                         | 1 hour                                                          |
-| 8         | `favorite-service` — verify/add `ClientsModule`, publish `favorite.deleted` on delete                                                               | 45 min                                                          |
-| 9         | Frontend — `FileService` + favorites load with files + upload UI                                                                                    | 4-6 hours                                                       |
-| 10        | Build, Docker rebuild, manual verification                                                                                                          | 2-3 hours                                                       |
-| **Total** |                                                                                                                                                     | **~17-25 hours (~3-4 days best case, 5-7 days with debugging)** |
+| Step      | Task                                                                                                                                                     | Time                                                            |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| 1         | Scaffold `file-service` (AppModule, Consul, metrics, Pino, Multer, RabbitMQ)                                                                             | 2-3 hours                                                       |
+| 2         | `FileEntity` + composite index + data-source + migration                                                                                                 | 45 min                                                          |
+| 3         | `FileService` + `ProgressDiskStorage` — upload (magic bytes, sanitization, UUID path), findByEntity, deleteByEntity, download token, stream path, delete | 2-3 hours                                                       |
+| 4         | ts-rest contract — `file.contract.ts` + `FileSchema`                                                                                                     | 1-2 hours                                                       |
+| 5         | `FileController` — 6 endpoints + RabbitMQ cascade consumer                                                                                               | 2-3 hours                                                       |
+| 6         | Docker Compose — `postgres-files`, `file-service`, `uploads` volume                                                                                      | 1-2 hours                                                       |
+| 7         | API gateway — proxy route + circuit breaker + stream endpoint JWT exception                                                                              | 1 hour                                                          |
+| 8         | `favorite-service` — verify/add `ClientsModule`, publish `favorite.deleted` on delete                                                                    | 45 min                                                          |
+| 9         | Frontend — `FileService` + favorites load with files + upload UI                                                                                         | 4-6 hours                                                       |
+| 10        | Build, Docker rebuild, manual verification                                                                                                               | 2-3 hours                                                       |
+| **Total** |                                                                                                                                                          | **~17-25 hours (~3-4 days best case, 5-7 days with debugging)** |
 
 ---
 
