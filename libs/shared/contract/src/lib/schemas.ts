@@ -37,6 +37,17 @@ export const FavoriteSchema = z.object({
   createdAt: z.union([z.string(), z.date()]),
 });
 
+export const FileSchema = z.object({
+  id: z.string().uuid(),
+  originalName: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+  uploadedBy: z.string(),
+  entityType: z.string().optional(),
+  entityId: z.string().uuid().optional(),
+  createdAt: z.union([z.string(), z.date()]),
+});
+
 // Mongoose documents use _id; criteria stores single string values from query params
 export const HistoryEntrySchema = z.object({
   _id: z.string(),
