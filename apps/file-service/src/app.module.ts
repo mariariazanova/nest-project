@@ -11,6 +11,7 @@ import { ConsulModule } from '@suggestify/backend/consul';
 import { MetricsModule } from '@suggestify/backend/metrics';
 import { LoggerModule } from '@suggestify/backend/logger';
 import { FileEntity } from './file/entities/file.entity';
+import { CreateFilesTable1784732101101 } from './migrations/1784732101101-CreateFilesTable';
 import { FileModule } from './file/file.module';
 import { SocketModule } from './socket/socket.module';
 import { SocketGateway } from './socket/socket.gateway';
@@ -38,7 +39,7 @@ import { ProgressDiskStorage } from './file/progress-disk-storage';
         entities: [FileEntity],
         synchronize: false,
         migrationsRun: true,
-        migrations: [],
+        migrations: [CreateFilesTable1784732101101],
         logging: config.get<string>('NODE_ENV') === 'development',
         ssl:
           config.get<string>('NODE_ENV') === 'production'

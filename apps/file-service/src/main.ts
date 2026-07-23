@@ -26,8 +26,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix('v1');
-
   // RabbitMQ consumer for cascade delete (favorite.deleted → delete associated files)
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.RMQ,

@@ -61,6 +61,27 @@ services:
       timeout: 5s
       retries: 5
 
+  # PostgreSQL - File Service
+  postgres-files:
+    image: postgres:15-alpine
+    container_name: postgres-files
+    environment:
+      POSTGRES_DB: files_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5435:5432'
+    volumes:
+      - postgres-files-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # MongoDB - History Service
   mongodb:
     image: mongo:7
@@ -355,6 +376,59 @@ services:
       retries: 5
       start_period: 60s
 
+  # File Service
+  file-service:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.file-service
+      args:
+        SERVICE_NAME: file-service
+        SERVICE_PORT: 3005
+    container_name: file-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - DB_HOST=postgres-files
+      - DB_PORT=5432
+      - DB_NAME=files_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - JWT_EXPIRATION=1d
+      - UPLOAD_DIR=/uploads
+      - UPLOAD_TEMP_DIR=/uploads/temp
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - SERVICE_HOST=file-service
+      - CORS_ORIGIN=*
+    volumes:
+      - uploads:/uploads
+    depends_on:
+      postgres-files:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3005/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   # Frontend
   frontend:
     build:
@@ -506,6 +580,8 @@ volumes:
   postgres-auth-data:
   postgres-suggestions-data:
   postgres-favorites-data:
+  postgres-files-data:
+  uploads:
   mongodb-data:
   redis-data:
   rabbitmq-data:
