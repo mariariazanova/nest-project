@@ -17,8 +17,10 @@ export class CircuitBreakerService {
 
   getBreaker(
     name: string,
+    // action is accepted for backward compatibility but ignored — the breaker
+    // dispatches through a generic thunk so each fire() call gets its own action
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    action: (...args: any[]) => Promise<any>,
+    _action?: (...args: any[]) => Promise<any>,
     options?: Partial<CircuitBreakerOptions>,
   ): CircuitBreaker {
     if (this.breakers.has(name)) {
@@ -33,7 +35,7 @@ export class CircuitBreakerService {
       resetTimeout: 10000,
       volumeThreshold: 5,
       ...options,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       errorFilter:
         options?.errorFilter ??
         ((error: any) => {
@@ -50,7 +52,11 @@ export class CircuitBreakerService {
         }),
     };
 
-    const breaker = new CircuitBreaker(action, defaultOptions);
+    // The breaker wraps a generic thunk dispatcher so every fire() call
+    // executes the action supplied at call time, not the one from creation.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const thunk = (fn: () => Promise<any>) => fn();
+    const breaker = new CircuitBreaker(thunk, defaultOptions);
 
     breaker.on('open', () => {
       this.logger.warn(`Circuit breaker ${name} opened`);
@@ -70,16 +76,13 @@ export class CircuitBreakerService {
 
   async execute<T>(
     name: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    action: (...args: any[]) => Promise<T>,
+    action: () => Promise<T>,
     fallback?: () => T,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...args: any[]
   ): Promise<T> {
-    const breaker = this.getBreaker(name, action);
+    const breaker = this.getBreaker(name);
 
     try {
-      return (await breaker.fire(...args)) as T;
+      return (await breaker.fire(action)) as T;
     } catch (error) {
       this.logger.error(`Circuit breaker ${name} failed:`, error);
       if (fallback) {

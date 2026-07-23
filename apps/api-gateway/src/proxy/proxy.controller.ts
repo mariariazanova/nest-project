@@ -29,4 +29,13 @@ export class ProxyController {
   async proxyFavorite(@Req() req: Request, @Res() res: Response) {
     return this.proxyService.forward(req, res, 'favorite-service');
   }
+
+  @All(['files', 'files/*path'])
+  async proxyFiles(@Req() req: Request, @Res() res: Response) {
+    // Stream endpoint returns binary bytes — bypass the JSON wrapper
+    if (req.method === 'GET' && req.path.endsWith('/stream')) {
+      return this.proxyService.forwardStream(req, res, 'file-service');
+    }
+    return this.proxyService.forward(req, res, 'file-service');
+  }
 }

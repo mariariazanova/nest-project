@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Delete,
+  HttpCode,
   Headers,
   Param,
   Query,
@@ -70,11 +71,14 @@ export class FileController
       new ParseFilePipe({
         validators: [
           new FileTypeValidator({
-            // Declared MIME first-pass filter — magic bytes check happens in FileService
+            // Declared MIME first-pass filter — magic bytes check happens in FileService.
+            // fallbackToMimetype required: disk storage leaves file.buffer undefined,
+            // so NestJS 11's FileTypeValidator can't read magic bytes here.
             // SVG excluded: can contain embedded <script> tags (XSS)
             // Legacy Office excluded (.doc/.xls/.ppt): support macros; allow only OOXML variants
             fileType:
               /^(image\/(jpeg|png|gif|webp)|video\/(mp4|quicktime|x-msvideo|webm)|audio\/(mpeg|wav|ogg|mp4)|application\/(pdf|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation))|text\/(plain|csv))$/,
+            fallbackToMimetype: true,
           }),
         ],
       }),
@@ -105,6 +109,9 @@ export class FileController
     @Query('entityType') entityType: string,
     @Query('entityId') entityId: string,
   ) {
+    if (!entityType || !entityId)
+      throw new BadRequestException('entityType and entityId are required');
+
     this.logger.log(`GET /files?entityType=${entityType}&entityId=${entityId}`);
     const result = await this.fileService.findByEntity(entityType, entityId);
 
@@ -160,6 +167,7 @@ export class FileController
   }
 
   @Delete(':id')
+  @HttpCode(204) // required: controller uses @TsRest({}) class-level only, not @TsRestHandler — NestJS defaults DELETE to 200
   @ApiOperation({ summary: 'Delete a file' })
   @ApiHeader({ name: 'X-User-Id', required: true })
   @ApiParam({ name: 'id', description: 'File UUID' })

@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
-import { MulterModule } from '@nestjs/platform-express';
 
 import { TsRestModule } from '@ts-rest/nest';
 import { HealthModule } from './health/health.module';
@@ -14,8 +13,6 @@ import { FileEntity } from './file/entities/file.entity';
 import { CreateFilesTable1784732101101 } from './migrations/1784732101101-CreateFilesTable';
 import { FileModule } from './file/file.module';
 import { SocketModule } from './socket/socket.module';
-import { SocketGateway } from './socket/socket.gateway';
-import { ProgressDiskStorage } from './file/progress-disk-storage';
 
 @Module({
   imports: [
@@ -57,19 +54,6 @@ import { ProgressDiskStorage } from './file/progress-disk-storage';
         signOptions: {
           expiresIn: config.get('JWT_EXPIRATION', '1d'),
         },
-      }),
-    }),
-
-    // registerAsync required: uploadDir and SocketGateway are not available at static module init time
-    MulterModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService, SocketGateway],
-      useFactory: (config: ConfigService, gateway: SocketGateway) => ({
-        storage: new ProgressDiskStorage(
-          config.get<string>('UPLOAD_TEMP_DIR', '/uploads/temp'),
-          gateway,
-        ),
-        limits: { fileSize: 5 * 1024 * 1024 * 1024 }, // 5 GB custom limit — Multer aborts the stream if exceeded
       }),
     }),
 

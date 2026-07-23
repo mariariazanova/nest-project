@@ -82,6 +82,12 @@ export class AuthMiddleware implements NestMiddleware {
       '/v1/metrics',
     ];
 
-    return publicRoutes.some((route) => path.startsWith(route));
+    if (publicRoutes.some((route) => path.startsWith(route))) return true;
+
+    // Stream endpoint authenticates via capability token in query param —
+    // browsers cannot send Authorization headers on direct navigation
+    if (/^\/v1\/files\/[^/]+\/stream$/.test(path)) return true;
+
+    return false;
   }
 }

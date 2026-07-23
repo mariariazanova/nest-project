@@ -46,16 +46,28 @@ export class ProxyService {
 
       // Build target URL
       const targetUrl = this.buildTargetUrl(serviceUrl, req);
+      const isMultipartRequest = String(
+        req.headers['content-type'] ?? '',
+      ).includes('multipart/form-data');
       const headers = {
         ...this.filterHeaders(req.headers),
         'cache-control': 'no-cache, no-store, must-revalidate',
         pragma: 'no-cache',
         'x-correlation-id': this.cls.get(CORRELATION_ID_KEY) ?? '',
       };
+      // Restore content-length for multipart so downstream multer can size the upload
+      if (isMultipartRequest && req.headers['content-length']) {
+        headers['content-length'] = req.headers['content-length'];
+      }
 
       if (req['user'] && req['user']['userId']) {
         headers['X-User-Id'] = req['user']['userId'];
       }
+
+      // Multipart uploads must be forwarded as a raw stream — body-parser does
+      // not consume multipart bodies, so req is still readable and req.body
+      // contains only text fields (no file data).
+      const requestData = isMultipartRequest ? req : req.body;
 
       // Execute with circuit breaker
       const response = await this.circuitBreaker.execute(
@@ -67,9 +79,11 @@ export class ProxyService {
                 method: req.method,
                 url: targetUrl,
                 headers,
-                data: req.body,
+                data: requestData,
                 params: req.query,
-                timeout: 10000,
+                timeout: 30000,
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
               }),
             );
           } catch (error) {
@@ -113,6 +127,69 @@ export class ProxyService {
       });
     } catch (error) {
       this.logger.error(`Catch error: ${error}`);
+      this.handleError(error, res);
+    }
+  }
+
+  // Binary passthrough — skips JSON envelope and circuit breaker; used for file downloads
+  async forwardStream(req: Request, res: Response, serviceName: string) {
+    try {
+      const serviceUrl = await this.discoverServiceUrl(serviceName);
+      if (!serviceUrl) {
+        res
+          .status(503)
+          .json({ message: `Service ${serviceName} not available` });
+        return;
+      }
+
+      const targetUrl = this.buildTargetUrl(serviceUrl, req);
+      const headers = {
+        ...this.filterHeaders(req.headers),
+        'x-correlation-id': this.cls.get(CORRELATION_ID_KEY) ?? '',
+      };
+
+      const response = await firstValueFrom(
+        this.httpService.request({
+          method: req.method,
+          url: targetUrl,
+          headers,
+          params: req.query,
+          responseType: 'arraybuffer',
+          timeout: 30000,
+          validateStatus: () => true,
+        }),
+      );
+
+      res.status(response.status);
+
+      const contentType = String(
+        response.headers['content-type'] ?? 'application/octet-stream',
+      );
+      res.setHeader('content-type', contentType);
+      if (response.headers['content-length']) {
+        res.setHeader(
+          'content-length',
+          String(response.headers['content-length']),
+        );
+      }
+      if (response.headers['content-disposition']) {
+        res.setHeader(
+          'content-disposition',
+          String(response.headers['content-disposition']),
+        );
+      }
+
+      if (contentType.includes('application/json') || response.status >= 400) {
+        const text = Buffer.from(response.data as ArrayBuffer).toString('utf8');
+        try {
+          res.json(JSON.parse(text));
+        } catch {
+          res.end(text);
+        }
+      } else {
+        res.end(Buffer.from(response.data as ArrayBuffer));
+      }
+    } catch (error) {
       this.handleError(error, res);
     }
   }
