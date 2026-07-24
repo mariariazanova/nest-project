@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
-import { from, map, Observable } from 'rxjs';
-import { Favorite } from '../interfaces/favorites';
+import { inject, Injectable } from '@angular/core';
+import { forkJoin, from, map, Observable, of, switchMap } from 'rxjs';
+import { Favorite, FavoriteWithFiles } from '../interfaces/favorites';
 import { createTsRestClient } from '../ts-rest-client';
+import { FileService } from './file.service';
 
 export interface AddFavoriteRequest {
   itemId: string;
@@ -14,6 +15,7 @@ export interface AddFavoriteRequest {
 })
 export class FavoriteService {
   private readonly api = createTsRestClient();
+  private readonly fileService = inject(FileService);
 
   getFavorites(category?: string): Observable<Favorite[]> {
     return from(
@@ -46,5 +48,21 @@ export class FavoriteService {
     return from(
       this.api.favorite.checkFavorite({ params: { category, itemId } }),
     ).pipe(map(({ body }) => body as { isFavorite: boolean }));
+  }
+
+  loadFavoritesWithFiles(category?: string): Observable<FavoriteWithFiles[]> {
+    return this.getFavorites(category).pipe(
+      switchMap((favorites) =>
+        favorites.length === 0
+          ? of([])
+          : forkJoin(
+              favorites.map((fav) =>
+                this.fileService
+                  .getByEntity('favorite', fav.id)
+                  .pipe(map((files) => ({ ...fav, files }))),
+              ),
+            ),
+      ),
+    );
   }
 }

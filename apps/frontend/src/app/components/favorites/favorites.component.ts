@@ -1,8 +1,9 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavoriteService } from '../../services/favorite.service';
+import { FileService } from '../../services/file.service';
 import { LoginService } from '../../services/login.service';
-import { Favorite } from '../../interfaces/favorites';
+import { FavoriteWithFiles, FileItem } from '../../interfaces/favorites';
 
 @Component({
   selector: 'app-favorites',
@@ -12,9 +13,10 @@ import { Favorite } from '../../interfaces/favorites';
   styleUrl: './favorites.component.scss',
 })
 export class FavoritesComponent implements OnInit {
-  favorites = signal<Favorite[]>([]);
+  favorites = signal<FavoriteWithFiles[]>([]);
   isLoading = signal<boolean>(false);
   errorMessage = signal<string | null>(null);
+  uploadProgress = signal<Record<string, number>>({});
 
   readonly categories = [
     { label: 'Wszystkie', value: '' },
@@ -28,6 +30,7 @@ export class FavoritesComponent implements OnInit {
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly fileService = inject(FileService);
   readonly loginService = inject(LoginService);
 
   ngOnInit(): void {
@@ -41,7 +44,7 @@ export class FavoritesComponent implements OnInit {
     this.errorMessage.set(null);
 
     this.favoriteService
-      .getFavorites(category || undefined)
+      .loadFavoritesWithFiles(category || undefined)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
@@ -70,11 +73,88 @@ export class FavoritesComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.favorites.update((list) => list.filter((f) => f.id !== favoriteId));
+          this.favorites.update((list) =>
+            list.filter((f) => f.id !== favoriteId),
+          );
         },
         error: () => {
           this.errorMessage.set('Nie udało się usunąć z ulubionych.');
         },
       });
+  }
+
+  onFileSelected(event: Event, favoriteId: string): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    this.uploadProgress.update((p) => ({ ...p, [favoriteId]: 0 }));
+
+    this.fileService
+      .upload(file, 'favorite', favoriteId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (uploaded) => {
+          this.favorites.update((list) =>
+            list.map((fav) =>
+              fav.id === favoriteId
+                ? { ...fav, files: [...fav.files, uploaded] }
+                : fav,
+            ),
+          );
+          this.uploadProgress.update((p) => {
+            const next = { ...p };
+            delete next[favoriteId];
+            return next;
+          });
+          // Reset input so the same file can be re-selected
+          (event.target as HTMLInputElement).value = '';
+        },
+        error: () => {
+          this.errorMessage.set('Nie udało się przesłać pliku.');
+          this.uploadProgress.update((p) => {
+            const next = { ...p };
+            delete next[favoriteId];
+            return next;
+          });
+        },
+      });
+  }
+
+  downloadFile(fileId: string, fileName: string): void {
+    this.fileService
+      .download(fileId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((downloadUrl) => {
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = fileName;
+        a.click();
+      });
+  }
+
+  deleteFile(fileId: string, favoriteId: string): void {
+    this.fileService
+      .delete(fileId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.favorites.update((list) =>
+            list.map((fav) =>
+              fav.id === favoriteId
+                ? { ...fav, files: fav.files.filter((f) => f.id !== fileId) }
+                : fav,
+            ),
+          );
+        },
+        error: () => {
+          this.errorMessage.set('Nie udało się usunąć pliku.');
+        },
+      });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 }

@@ -10,12 +10,15 @@ export interface AuthResponse {
   accessToken: string;
 }
 
+const TOKEN_KEY = 'accessToken';
+const USER_ID_KEY = 'userId';
+
 @Injectable({
   providedIn: 'root',
 })
 export class UserService {
-  userId: string | null = null;
-  accessToken: string | null = null;
+  userId: string | null = localStorage.getItem(USER_ID_KEY);
+  accessToken: string | null = localStorage.getItem(TOKEN_KEY);
 
   private readonly api = createTsRestClient();
 
@@ -44,6 +47,8 @@ export class UserService {
     const data: AuthResponse = result.body as AuthResponse;
     this.accessToken = data.accessToken;
     this.userId = data.user.id;
+    localStorage.setItem(TOKEN_KEY, data.accessToken);
+    localStorage.setItem(USER_ID_KEY, data.user.id);
     return data;
   }
 
@@ -54,5 +59,7 @@ export class UserService {
   clearSession(): void {
     this.accessToken = null;
     this.userId = null;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_ID_KEY);
   }
 }

@@ -45,7 +45,10 @@ describe('FavoritesComponent', () => {
 
     it('should expose the correct categories', () => {
       expect(component.categories.length).toBe(5);
-      expect(component.categories[0]).toEqual({ label: 'Wszystkie', value: '' });
+      expect(component.categories[0]).toEqual({
+        label: 'Wszystkie',
+        value: '',
+      });
       expect(component.categories[4]).toEqual({ label: 'Gry', value: 'games' });
     });
   });
@@ -82,37 +85,45 @@ describe('FavoritesComponent', () => {
       expect(component.errorMessage()).toBeNull();
     });
 
-    it('should call getFavorites without argument when no category given', () => {
+    it('should call loadFavoritesWithFiles without argument when no category given', () => {
       component.loadFavorites();
 
-      expect(favoriteService.getFavorites).toHaveBeenCalledWith(undefined);
+      expect(favoriteService.loadFavoritesWithFiles).toHaveBeenCalledWith(
+        undefined,
+      );
     });
 
-    it('should call getFavorites without argument for empty string category', () => {
+    it('should call loadFavoritesWithFiles without argument for empty string category', () => {
       component.loadFavorites('');
 
-      expect(favoriteService.getFavorites).toHaveBeenCalledWith(undefined);
+      expect(favoriteService.loadFavoritesWithFiles).toHaveBeenCalledWith(
+        undefined,
+      );
     });
 
-    it('should forward a non-empty category to getFavorites', () => {
+    it('should forward a non-empty category to loadFavoritesWithFiles', () => {
       component.loadFavorites('books');
 
-      expect(favoriteService.getFavorites).toHaveBeenCalledWith('books');
+      expect(favoriteService.loadFavoritesWithFiles).toHaveBeenCalledWith(
+        'books',
+      );
     });
 
     it('should set errorMessage and stop loading on non-404 error', () => {
-      vi.mocked(favoriteService.getFavorites).mockReturnValue(
+      vi.mocked(favoriteService.loadFavoritesWithFiles).mockReturnValue(
         throwError(() => new Error('fail')),
       );
       component.loadFavorites();
 
-      expect(component.errorMessage()).toBe('Nie udało się załadować ulubionych.');
+      expect(component.errorMessage()).toBe(
+        'Nie udało się załadować ulubionych.',
+      );
       expect(component.isLoading()).toBe(false);
     });
 
     it('should not update favorites on non-404 error', () => {
       component.favorites.set(favoritesMock);
-      vi.mocked(favoriteService.getFavorites).mockReturnValue(
+      vi.mocked(favoriteService.loadFavoritesWithFiles).mockReturnValue(
         throwError(() => new Error('fail')),
       );
       component.loadFavorites();
@@ -122,7 +133,7 @@ describe('FavoritesComponent', () => {
 
     it('should treat 404 as empty list with no error message', () => {
       component.favorites.set(favoritesMock);
-      vi.mocked(favoriteService.getFavorites).mockReturnValue(
+      vi.mocked(favoriteService.loadFavoritesWithFiles).mockReturnValue(
         throwError(() => ({ status: 404 })),
       );
       component.loadFavorites();
@@ -190,7 +201,9 @@ describe('FavoritesComponent', () => {
       );
       component.removeFavorite('1');
 
-      expect(component.errorMessage()).toBe('Nie udało się usunąć z ulubionych.');
+      expect(component.errorMessage()).toBe(
+        'Nie udało się usunąć z ulubionych.',
+      );
     });
 
     it('should NOT modify favorites list on removal error', () => {

@@ -4,7 +4,7 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root',
 })
 export class LoginService {
-  isLoggedIn = signal<boolean>(false);
+  isLoggedIn = signal<boolean>(!!localStorage.getItem('accessToken'));
 
   setLoggedIn(status: boolean): void {
     this.isLoggedIn.set(status);

@@ -7,6 +7,7 @@ class FavoriteServiceMock {
   getFavorites = vi.fn().mockReturnValue(of(favoritesMock));
   addFavorite = vi.fn().mockReturnValue(of(favoritesMock[0]));
   removeFavorite = vi.fn().mockReturnValue(of(void 0));
+  loadFavoritesWithFiles = vi.fn().mockReturnValue(of(favoritesMock));
 }
 
 export const favoriteServiceMockProvider = {

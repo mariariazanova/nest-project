@@ -26,10 +26,57 @@
       @for (favorite of favorites(); track favorite.id) {
         <li class="favorite-item">
           <div class="favorite-info">
-            <span class="favorite-title">{{ favorite.title || favorite.itemId }}</span>
+            <span class="favorite-title">{{
+              favorite.title || favorite.itemId
+            }}</span>
             <span class="favorite-category">{{ favorite.category }}</span>
           </div>
-          <button class="remove-button" (click)="removeFavorite(favorite.id)">✕</button>
+
+          <div class="favorite-files">
+            @for (file of favorite.files; track file.id) {
+              <div class="file-item">
+                <span class="file-name">📎 {{ file.originalName }}</span>
+                <span class="file-size">{{ formatFileSize(file.size) }}</span>
+
+                <button
+                  class="file-button"
+                  (click)="downloadFile(file.id, file.originalName)"
+                >
+                  ⬇
+                </button>
+                <button
+                  class="file-button file-button--delete"
+                  (click)="deleteFile(file.id, favorite.id)"
+                >
+                  🗑
+                </button>
+              </div>
+            }
+
+            @if (uploadProgress()[favorite.id] !== undefined) {
+              <div class="upload-progress">
+                <span>Przesyłanie...</span>
+                <progress
+                  [value]="uploadProgress()[favorite.id]"
+                  max="100"
+                ></progress>
+              </div>
+            }
+
+            <label class="upload-label">
+              📎 Dodaj plik
+              <input
+                type="file"
+                hidden
+                (change)="onFileSelected($event, favorite.id)"
+                accept="image/*,video/*,audio/*,application/pdf,.docx,.xlsx,.pptx,text/*"
+              />
+            </label>
+          </div>
+
+          <button class="remove-button" (click)="removeFavorite(favorite.id)">
+            ✕
+          </button>
         </li>
       }
     </ul>

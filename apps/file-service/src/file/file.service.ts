@@ -63,10 +63,14 @@ export class FileService {
     fs.closeSync(fd);
 
     const detected = await fileTypeFromBuffer(header);
-    if (!detected || !ALLOWED_MIME_TYPES.has(detected.mime)) {
+    // file-type returns undefined for text formats (no magic bytes); fall back to multer's declared MIME type
+    const mimeType = detected?.mime ?? file.mimetype;
+
+    if (!mimeType || !ALLOWED_MIME_TYPES.has(mimeType)) {
       fs.unlinkSync(file.path);
+
       throw new BadRequestException(
-        `File type ${detected?.mime ?? 'unknown'} is not allowed`,
+        `File type ${mimeType ?? 'unknown'} is not allowed`,
       );
     }
 
@@ -83,7 +87,7 @@ export class FileService {
     const entity = await this.repo.save({
       id: fileId,
       originalName: safeName,
-      mimeType: detected.mime,
+      mimeType: mimeType,
       size: file.size,
       storagePath: path.join(finalDir, 'file'),
       uploadedBy: userId,

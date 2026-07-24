@@ -1,6 +1,6 @@
-import { Favorite } from '../../src/app/interfaces/favorites';
+import { FavoriteWithFiles } from '../../src/app/interfaces/favorites';
 
-export const favoritesMock: Favorite[] = [
+export const favoritesMock: FavoriteWithFiles[] = [
   {
     id: '1',
     userId: 'user-id',
@@ -8,6 +8,7 @@ export const favoritesMock: Favorite[] = [
     title: 'Book One',
     category: 'books',
     createdAt: 'date',
+    files: [],
   },
   {
     id: '2',
@@ -16,5 +17,6 @@ export const favoritesMock: Favorite[] = [
     title: 'Book Two',
     category: 'books',
     createdAt: 'date',
+    files: [],
   },
 ];
