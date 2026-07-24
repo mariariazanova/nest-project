@@ -9,6 +9,7 @@ import {
   Query,
   Logger,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +20,7 @@ import {
   ApiBody,
   ApiResponse,
 } from '@nestjs/swagger';
+import { ClientProxy } from '@nestjs/microservices';
 import { TsRest, NestControllerInterface } from '@ts-rest/nest';
 import { favoriteContract, Status } from '@suggestify/shared/contract';
 import { FavoriteService } from './favorite.service';
@@ -34,7 +36,10 @@ export class FavoriteController
 {
   private readonly logger = new Logger(FavoriteController.name);
 
-  constructor(private readonly favoriteService: FavoriteService) {}
+  constructor(
+    private readonly favoriteService: FavoriteService,
+    @Inject('RABBITMQ_CLIENT') private readonly rabbitMQClient: ClientProxy,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all favorites for the authenticated user' })
@@ -158,6 +163,7 @@ export class FavoriteController
     }
 
     await this.favoriteService.removeFavorite(userId, id);
+    this.rabbitMQClient.emit('favorite.deleted', { favoriteId: id });
 
     return { status: Status.NoContent, body: undefined };
   }

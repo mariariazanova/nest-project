@@ -27,6 +27,10 @@ describe('FavoriteController', () => {
     isFavorite: jest.fn(),
   };
 
+  const mockRabbitMQClient = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FavoriteController],
@@ -35,6 +39,10 @@ describe('FavoriteController', () => {
           provide: FavoriteService,
           useValue: mockFavoriteService,
         },
+        {
+          provide: 'RABBITMQ_CLIENT',
+          useValue: mockRabbitMQClient,
+        },
       ],
     }).compile();
 
@@ -42,6 +50,7 @@ describe('FavoriteController', () => {
     service = module.get<FavoriteService>(FavoriteService);
 
     jest.clearAllMocks();
+    mockRabbitMQClient.emit.mockReturnValue({ subscribe: jest.fn() });
   });
 
   it('should be defined', () => {
@@ -137,12 +146,15 @@ describe('FavoriteController', () => {
   });
 
   describe('removeFavorite', () => {
-    it('should remove a favorite', async () => {
+    it('should remove a favorite and emit favorite.deleted event', async () => {
       mockFavoriteService.removeFavorite.mockResolvedValue(undefined);
 
       await controller.remove('fav-1', mockUserId);
 
       expect(service.removeFavorite).toHaveBeenCalledWith(mockUserId, 'fav-1');
+      expect(mockRabbitMQClient.emit).toHaveBeenCalledWith('favorite.deleted', {
+        favoriteId: 'fav-1',
+      });
     });
 
     it('should throw BadRequestException if userId is missing', async () => {
