@@ -26,16 +26,22 @@
       @for (favorite of favorites(); track favorite.id) {
         <li class="favorite-item">
           <div class="favorite-info">
-            <span class="favorite-title">{{
-              favorite.title || favorite.itemId
+            <span
+              class="favorite-title"
+              [title]="favorite.title || favorite.itemId"
+              >{{ favorite.title || favorite.itemId }}</span
+            >
+            <span class="favorite-category">{{
+              getCategoryLabel(favorite.category)
             }}</span>
-            <span class="favorite-category">{{ favorite.category }}</span>
           </div>
 
           <div class="favorite-files">
             @for (file of favorite.files; track file.id) {
               <div class="file-item">
-                <span class="file-name">📎 {{ file.originalName }}</span>
+                <span class="file-name" [title]="file.originalName"
+                  >📎 {{ file.originalName }}</span
+                >
                 <span class="file-size">{{ formatFileSize(file.size) }}</span>
 
                 <button

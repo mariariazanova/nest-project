@@ -152,6 +152,10 @@ export class FavoritesComponent implements OnInit {
       });
   }
 
+  getCategoryLabel(category: string): string {
+    return this.categories.find((c) => c.value === category)?.label ?? category;
+  }
+
   formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
