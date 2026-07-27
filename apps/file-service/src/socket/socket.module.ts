@@ -1,10 +1,25 @@
 import { Global, Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { SocketGateway } from './socket.gateway';
 
-// @Global() makes SocketGateway available everywhere without per-module imports.
-// Phase 2.2 will swap the no-op stub for the real Socket.IO gateway here.
 @Global()
 @Module({
+  imports: [
+    ClientsModule.register([
+      {
+        name: 'NOTIFICATION_CLIENT',
+        transport: Transport.RMQ,
+        options: {
+          urls: [
+            process.env.RABBITMQ_URL ||
+              'amqp://rabbit:rabbitpass@rabbitmq:5672',
+          ],
+          queue: 'notifications_queue',
+          queueOptions: { durable: true },
+        },
+      },
+    ]),
+  ],
   providers: [SocketGateway],
   exports: [SocketGateway],
 })

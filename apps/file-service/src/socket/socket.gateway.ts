@@ -1,8 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class SocketGateway {
-  emitToUser(_userId: string, _event: string, _payload: unknown): void {
-    // no-op until Phase 2.2 wires the real Socket.IO gateway
+  constructor(
+    @Inject('NOTIFICATION_CLIENT')
+    private readonly notificationClient: ClientProxy,
+  ) {}
+
+  emitToUser(userId: string, event: string, payload: unknown): void {
+    this.notificationClient.emit(event, {
+      userId,
+      ...(payload as Record<string, unknown>),
+    });
   }
 }

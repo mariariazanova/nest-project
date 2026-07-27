@@ -161,8 +161,11 @@ export class FileService {
     if (!file) throw new NotFoundException('File not found');
     if (file.uploadedBy !== userId)
       throw new ForbiddenException('Access denied');
+
     this.removeFromDisk(file.storagePath);
     await this.repo.delete(fileId);
+
+    this.gateway.emitToUser(userId, 'file-deleted', { fileId });
   }
 
   private removeFromDisk(storagePath: string): void {
