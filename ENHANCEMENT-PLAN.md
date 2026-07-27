@@ -331,6 +331,8 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 - Show admin menu only for admin users
 - Charts/graphs for analytics visualization
 
+**Consider:** System-wide broadcast alerts (e.g. "Scheduled maintenance in 10 minutes", "New feature available") via the WebSocket `notification-service` introduced in Phase 2.2. Admins would trigger alerts through the admin UI; `notification-service` would broadcast to all connected users (no userId filter — emit to all sockets instead of a specific room). Deferred here because Phase 2.2 has no admin trigger mechanism; revisit once the admin panel exists.
+
 **Estimate:** 7-10 days (1 developer)
 
 ---

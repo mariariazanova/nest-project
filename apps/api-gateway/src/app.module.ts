@@ -6,6 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 // Modules
 import { ProxyModule } from './proxy/proxy.module';
+import { WebSocketModule } from './websocket/websocket.module';
 import { HealthModule } from '@suggestify/backend/health';
 import { ConsulModule } from '@suggestify/backend/consul';
 import { CircuitBreakerModule } from '@suggestify/backend/circuit-breaker';
@@ -61,6 +62,7 @@ import { GlobalClientsModule } from './clients/clients.module';
 
     GlobalClientsModule,
     ProxyModule,
+    WebSocketModule,
     HealthModule,
     ConsulModule.forRoot({
       serviceName: 'api-gateway',
