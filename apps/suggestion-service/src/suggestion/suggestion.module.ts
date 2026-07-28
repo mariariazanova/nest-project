@@ -30,7 +30,9 @@ import { SeedService } from '../seed.service';
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: (config: ConfigService) => {
-          const rabbitUrl = config.get('RABBITMQ_URL') || 'amqp://rabbit:rabbitpass@rabbitmq:5672';
+          const rabbitUrl =
+            config.get('RABBITMQ_URL') ||
+            'amqp://rabbit:rabbitpass@rabbitmq:5672';
 
           return {
             transport: Transport.RMQ,
@@ -40,6 +42,20 @@ import { SeedService } from '../seed.service';
               queueOptions: { durable: true },
             },
           };
+        },
+      },
+    ]),
+    ClientsModule.register([
+      {
+        name: 'NOTIFICATION_CLIENT',
+        transport: Transport.RMQ,
+        options: {
+          urls: [
+            process.env['RABBITMQ_URL'] ||
+              'amqp://rabbit:rabbitpass@rabbitmq:5672',
+          ],
+          queue: 'notifications_queue',
+          queueOptions: { durable: true },
         },
       },
     ]),

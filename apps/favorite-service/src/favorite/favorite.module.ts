@@ -21,6 +21,18 @@ import { FavoriteEntity } from './entities/favorite.entity';
           queueOptions: { durable: true },
         },
       },
+      {
+        name: 'NOTIFICATION_CLIENT',
+        transport: Transport.RMQ,
+        options: {
+          urls: [
+            process.env['RABBITMQ_URL'] ||
+              'amqp://rabbit:rabbitpass@rabbitmq:5672',
+          ],
+          queue: 'notifications_queue',
+          queueOptions: { durable: true },
+        },
+      },
     ]),
   ],
   controllers: [FavoriteController],

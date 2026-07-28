@@ -39,6 +39,8 @@ export class FavoriteController
   constructor(
     private readonly favoriteService: FavoriteService,
     @Inject('RABBITMQ_CLIENT') private readonly rabbitMQClient: ClientProxy,
+    @Inject('NOTIFICATION_CLIENT')
+    private readonly notificationClient: ClientProxy,
   ) {}
 
   @Get()
@@ -142,6 +144,13 @@ export class FavoriteController
 
     const result = await this.favoriteService.addFavorite(userId, dto);
 
+    this.notificationClient.emit('favorite-added', {
+      userId,
+      favoriteId: result.id,
+      category: result.category,
+      title: result.title,
+    });
+
     return { status: Status.Created, body: result };
   }
 
@@ -163,7 +172,12 @@ export class FavoriteController
     }
 
     await this.favoriteService.removeFavorite(userId, id);
+
     this.rabbitMQClient.emit('favorite.deleted', { favoriteId: id });
+    this.notificationClient.emit('favorite-deleted', {
+      userId,
+      favoriteId: id,
+    });
 
     return { status: Status.NoContent, body: undefined };
   }

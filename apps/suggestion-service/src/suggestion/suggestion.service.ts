@@ -42,6 +42,9 @@ export class SuggestionService {
     @Inject('HISTORY_SERVICE')
     private historyClient: ClientProxy,
 
+    @Inject('NOTIFICATION_CLIENT')
+    private notificationClient: ClientProxy,
+
     private readonly cls: ClsService,
   ) {
     this.categoryRepoMap = {
@@ -130,6 +133,20 @@ export class SuggestionService {
           .subscribe({
             next: () => this.logger.log('Event emitted successfully'),
             error: (err) => this.logger.error('Failed to emit event:', err),
+          });
+
+        this.notificationClient
+          .emit('suggestion-created', {
+            userId,
+            category,
+            count: items.length,
+          })
+          .subscribe({
+            error: (err) =>
+              this.logger.error(
+                'Failed to emit suggestion-created notification:',
+                err,
+              ),
           });
       } catch (error) {
         this.logger.error('Exception emitting event:', error);
