@@ -347,6 +347,7 @@ services:
       - REDIS_PASSWORD=redispass
       - CONSUL_HOST=consul
       - CONSUL_PORT=8500
+      - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
       - SERVICE_HOST=favorite-service
       - CORS_ORIGIN=*
     #    ports:
@@ -357,6 +358,8 @@ services:
       redis:
         condition: service_healthy
       consul:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     networks:
       - microservices-network
@@ -429,6 +432,46 @@ services:
       retries: 5
       start_period: 60s
 
+  # Notification Service
+  notification-service:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.notification-service
+    container_name: notification-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3006
+      - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - CORS_ORIGIN=http://localhost:4200
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=notification-service
+    # Port NOT exposed — only api-gateway connects here on the internal network
+    #    ports:
+    #      - "3006:3006"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3006/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   # Frontend
   frontend:
     build:
@@ -479,6 +522,7 @@ services:
       - SUGGESTION_SERVICE_URL=http://suggestion-service:3002
       - HISTORY_SERVICE_URL=http://history-service:3003
       - FAVORITE_SERVICE_URL=http://favorite-service:3004
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3006
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       - RATE_LIMIT_WINDOW_MS=60000
       - RATE_LIMIT_MAX_REQUESTS=100
@@ -496,6 +540,8 @@ services:
       favorite-service:
         condition: service_healthy
       file-service:
+        condition: service_healthy
+      notification-service:
         condition: service_healthy
       redis:
         condition: service_healthy

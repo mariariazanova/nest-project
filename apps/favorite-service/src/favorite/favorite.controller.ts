@@ -144,12 +144,17 @@ export class FavoriteController
 
     const result = await this.favoriteService.addFavorite(userId, dto);
 
-    this.notificationClient.emit('favorite-added', {
-      userId,
-      favoriteId: result.id,
-      category: result.category,
-      title: result.title,
-    });
+    this.notificationClient
+      .emit('favorite-added', {
+        userId,
+        favoriteId: result.id,
+        category: result.category,
+        title: result.title,
+      })
+      .subscribe({
+        error: (err) =>
+          this.logger.error('Failed to emit favorite-added notification:', err),
+      });
 
     return { status: Status.Created, body: result };
   }
@@ -171,13 +176,27 @@ export class FavoriteController
       throw new BadRequestException('Missing X-User-Id header');
     }
 
-    await this.favoriteService.removeFavorite(userId, id);
+    const removed = await this.favoriteService.removeFavorite(userId, id);
 
-    this.rabbitMQClient.emit('favorite.deleted', { favoriteId: id });
-    this.notificationClient.emit('favorite-deleted', {
-      userId,
-      favoriteId: id,
-    });
+    this.rabbitMQClient
+      .emit('favorite.deleted', { favoriteId: id })
+      .subscribe({
+        error: (err) =>
+          this.logger.error('Failed to emit favorite.deleted:', err),
+      });
+    this.notificationClient
+      .emit('favorite-deleted', {
+        userId,
+        favoriteId: id,
+        title: removed.title,
+      })
+      .subscribe({
+        error: (err) =>
+          this.logger.error(
+            'Failed to emit favorite-deleted notification:',
+            err,
+          ),
+      });
 
     return { status: Status.NoContent, body: undefined };
   }

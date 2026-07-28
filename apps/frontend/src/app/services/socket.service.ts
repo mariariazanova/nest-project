@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../environments/environment';
 
 const WS_URL = environment.apiBaseUrl.replace(/\/v1\/?$/, '');
 
@@ -24,16 +24,11 @@ export class SocketService implements OnDestroy {
   }
 
   on<T>(event: string): Observable<T> {
-    return new Observable<T>((observer) => {
-      if (!this.socket) {
-        observer.error(
-          new Error('Socket not connected. Call connect() first.'),
-        );
-        return;
-      }
+    if (!this.socket) return EMPTY;
 
+    return new Observable<T>((observer) => {
       const handler = (data: T) => observer.next(data);
-      this.socket.on(event, handler);
+      this.socket!.on(event, handler);
 
       return () => {
         this.socket?.off(event, handler);

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FavoriteService } from '../../services/favorite.service';
 import { FileService } from '../../services/file.service';
 import { LoginService } from '../../services/login.service';
+import { SocketService } from '../../services/socket.service';
 import { FavoriteWithFiles, FileItem } from '../../interfaces/favorites';
 
 @Component({
@@ -31,12 +32,25 @@ export class FavoritesComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly favoriteService = inject(FavoriteService);
   private readonly fileService = inject(FileService);
+  private readonly socketService = inject(SocketService);
   readonly loginService = inject(LoginService);
+
+  private pendingUploadFavoriteId: string | null = null;
 
   ngOnInit(): void {
     if (this.loginService.isLoggedIn()) {
       this.loadFavorites();
     }
+
+    this.socketService
+      .on<{ fileId: string; percent: number }>('upload-progress')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ percent }) => {
+        if (this.pendingUploadFavoriteId) {
+          const favoriteId = this.pendingUploadFavoriteId;
+          this.uploadProgress.update((p) => ({ ...p, [favoriteId]: percent }));
+        }
+      });
   }
 
   loadFavorites(category?: string): void {
@@ -87,13 +101,15 @@ export class FavoritesComponent implements OnInit {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
+    this.pendingUploadFavoriteId = favoriteId;
     this.uploadProgress.update((p) => ({ ...p, [favoriteId]: 0 }));
 
     this.fileService
       .upload(file, 'favorite', favoriteId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (uploaded) => {
+        next: (uploaded: FileItem) => {
+          this.pendingUploadFavoriteId = null;
           this.favorites.update((list) =>
             list.map((fav) =>
               fav.id === favoriteId
@@ -106,10 +122,10 @@ export class FavoritesComponent implements OnInit {
             delete next[favoriteId];
             return next;
           });
-          // Reset input so the same file can be re-selected
           (event.target as HTMLInputElement).value = '';
         },
         error: () => {
+          this.pendingUploadFavoriteId = null;
           this.errorMessage.set('Nie udało się przesłać pliku.');
           this.uploadProgress.update((p) => {
             const next = { ...p };

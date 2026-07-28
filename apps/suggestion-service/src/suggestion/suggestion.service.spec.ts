@@ -80,6 +80,10 @@ describe('SuggestionService', () => {
           useValue: mockHistoryClient,
         },
         {
+          provide: 'NOTIFICATION_CLIENT',
+          useValue: { emit: jest.fn().mockReturnValue(of({})) },
+        },
+        {
           provide: ClsService,
           useValue: {
             get: jest.fn(),

@@ -26,8 +26,13 @@ export class FavoriteService {
     private cacheManager: Cache,
   ) {}
 
-  async getUserFavorites(userId: string, category?: FavoriteCategory): Promise<FavoriteEntity[]> {
-    this.logger.log(`Fetching favorites for user: ${userId}, category: ${category || 'all'}`);
+  async getUserFavorites(
+    userId: string,
+    category?: FavoriteCategory,
+  ): Promise<FavoriteEntity[]> {
+    this.logger.log(
+      `Fetching favorites for user: ${userId}, category: ${category || 'all'}`,
+    );
 
     const cacheKey = `favorites:user:${userId}:${category || 'all'}`;
     const cached = await this.cacheManager.get<FavoriteEntity[]>(cacheKey);
@@ -51,7 +56,10 @@ export class FavoriteService {
     return favorites;
   }
 
-  async addFavorite(userId: string, dto: CreateFavoriteDto): Promise<FavoriteEntity> {
+  async addFavorite(
+    userId: string,
+    dto: CreateFavoriteDto,
+  ): Promise<FavoriteEntity> {
     this.logger.log(
       `Adding favorite for user: ${userId}, item: ${dto.itemId}, category: ${dto.category}`,
     );
@@ -79,10 +87,15 @@ export class FavoriteService {
     return saved;
   }
 
-  async removeFavorite(userId: string, favoriteId: string): Promise<void> {
+  async removeFavorite(
+    userId: string,
+    favoriteId: string,
+  ): Promise<FavoriteEntity> {
     this.logger.log(`Removing favorite: ${favoriteId} for user: ${userId}`);
 
-    const favorite = await this.favoriteRepo.findOne({ where: { id: favoriteId } });
+    const favorite = await this.favoriteRepo.findOne({
+      where: { id: favoriteId },
+    });
 
     if (!favorite) {
       throw new NotFoundException('Favorite not found');
@@ -96,10 +109,17 @@ export class FavoriteService {
     await this.invalidateUserCache(userId);
 
     this.logger.log(`Favorite removed: ${favoriteId}`);
+
+    return favorite;
   }
 
-  async getFavoriteById(userId: string, favoriteId: string): Promise<FavoriteEntity> {
-    const favorite = await this.favoriteRepo.findOne({ where: { id: favoriteId } });
+  async getFavoriteById(
+    userId: string,
+    favoriteId: string,
+  ): Promise<FavoriteEntity> {
+    const favorite = await this.favoriteRepo.findOne({
+      where: { id: favoriteId },
+    });
 
     if (!favorite) {
       throw new NotFoundException('Favorite not found');
@@ -112,15 +132,23 @@ export class FavoriteService {
     return favorite;
   }
 
-  async isFavorite(userId: string, itemId: string, category: FavoriteCategory): Promise<boolean> {
-    const count = await this.favoriteRepo.count({ where: { userId, itemId, category } });
+  async isFavorite(
+    userId: string,
+    itemId: string,
+    category: FavoriteCategory,
+  ): Promise<boolean> {
+    const count = await this.favoriteRepo.count({
+      where: { userId, itemId, category },
+    });
     return count > 0;
   }
 
   private async invalidateUserCache(userId: string): Promise<void> {
     const categories = ['all', ...Object.values(FavoriteCategory)];
     await Promise.all(
-      categories.map((cat) => this.cacheManager.del(`favorites:user:${userId}:${cat}`)),
+      categories.map((cat) =>
+        this.cacheManager.del(`favorites:user:${userId}:${cat}`),
+      ),
     );
   }
 }

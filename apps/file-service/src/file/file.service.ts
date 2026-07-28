@@ -165,7 +165,10 @@ export class FileService {
     this.removeFromDisk(file.storagePath);
     await this.repo.delete(fileId);
 
-    this.gateway.emitToUser(userId, 'file-deleted', { fileId });
+    this.gateway.emitToUser(userId, 'file-deleted', {
+      fileId,
+      originalName: file.originalName,
+    });
   }
 
   private removeFromDisk(storagePath: string): void {

@@ -31,6 +31,10 @@ describe('FavoriteController', () => {
     emit: jest.fn(),
   };
 
+  const mockNotificationClient = {
+    emit: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FavoriteController],
@@ -43,14 +47,19 @@ describe('FavoriteController', () => {
           provide: 'RABBITMQ_CLIENT',
           useValue: mockRabbitMQClient,
         },
+        {
+          provide: 'NOTIFICATION_CLIENT',
+          useValue: mockNotificationClient,
+        },
       ],
     }).compile();
 
-    controller = module.get<FavoriteController>(FavoriteController);
-    service = module.get<FavoriteService>(FavoriteService);
+    controller = module.get(FavoriteController);
+    service = module.get(FavoriteService);
 
     jest.clearAllMocks();
     mockRabbitMQClient.emit.mockReturnValue({ subscribe: jest.fn() });
+    mockNotificationClient.emit.mockReturnValue({ subscribe: jest.fn() });
   });
 
   it('should be defined', () => {
@@ -147,7 +156,7 @@ describe('FavoriteController', () => {
 
   describe('removeFavorite', () => {
     it('should remove a favorite and emit favorite.deleted event', async () => {
-      mockFavoriteService.removeFavorite.mockResolvedValue(undefined);
+      mockFavoriteService.removeFavorite.mockResolvedValue(mockFavorite);
 
       await controller.remove('fav-1', mockUserId);
 
