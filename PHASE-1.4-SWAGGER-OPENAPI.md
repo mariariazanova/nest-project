@@ -1,4 +1,4 @@
-# Phase 1.4: Swagger/OpenAPI Documentation — Implementation Plan
+﻿# Phase 1.4: Swagger/OpenAPI Documentation — Implementation Plan
 
 ## Overview
 
@@ -109,7 +109,7 @@ api-gateway:3000/api         — Swagger UI: empty endpoint list; description li
 ### Step 1: Install `@nestjs/swagger` (5 min)
 
 ```bash
-pnpm add @nestjs/swagger
+npm install @nestjs/swagger
 ```
 
 `swagger-ui-express` has been bundled inside `@nestjs/swagger` since v7 — no separate install needed.
@@ -117,7 +117,7 @@ pnpm add @nestjs/swagger
 Verify:
 
 ```bash
-pnpm list @nestjs/swagger
+npm list @nestjs/swagger
 ```
 
 ### Step 2: Add `@ApiProperty()` to DTOs (30 min)
@@ -533,7 +533,7 @@ Open each URL in a browser and verify endpoint count, tags, and request executio
 ### Installation
 
 - [ ] `@nestjs/swagger` present in root `package.json` dependencies
-- [ ] `pnpm list @nestjs/swagger` shows the installed version
+- [ ] `npm list @nestjs/swagger` shows the installed version
 
 ### DTOs
 
@@ -595,7 +595,7 @@ git checkout apps/api-gateway/src/proxy/proxy.controller.ts
 git checkout apps/api-gateway/src/main.ts
 
 # Remove the package and rebuild
-pnpm remove @nestjs/swagger
+npm uninstall @nestjs/swagger
 docker compose up -d --build
 ```
 

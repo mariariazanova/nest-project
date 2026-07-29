@@ -1,4 +1,4 @@
-# Phase 1.3: Request/Response Logging Middleware — Completion Report
+﻿# Phase 1.3: Request/Response Logging Middleware — Completion Report
 
 **Project**: Suggestify
 **Phase**: 1.3 — Request/Response Logging Middleware
@@ -165,7 +165,7 @@ export { maskSensitiveFields } from './lib/mask-sensitive-fields';
 
 - ✅ `mask-sensitive-fields.spec.ts` — 17/17 pass
 - ✅ `logging.interceptor.spec.ts` — 7/7 pass
-- ✅ `pnpm nx test logger` — 31/31 pass (all 4 suites)
+- ✅ `npm exec nx test logger` — 31/31 pass (all 4 suites)
 
 ### Build & Lint
 

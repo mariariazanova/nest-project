@@ -1,4 +1,4 @@
-# Phase 1.3: Request/Response Logging Middleware — Implementation Plan
+﻿# Phase 1.3: Request/Response Logging Middleware — Implementation Plan
 
 ## Overview
 
@@ -437,13 +437,13 @@ Test cases:
 
 - [ ] `mask-sensitive-fields.spec.ts` — all cases pass
 - [ ] `logging.interceptor.spec.ts` — all cases pass
-- [ ] `pnpm nx test logger` — zero failures
-- [ ] `pnpm nx run-many --target=test --all` — all projects still pass
+- [ ] `npm exec nx test logger` — zero failures
+- [ ] `npm exec nx run-many --target=test --all` — all projects still pass
 
 ### Build & Lint
 
-- [ ] `pnpm nx build logger` — zero TypeScript errors
-- [ ] `pnpm nx run-many --target=build` — all 5 services compile
+- [ ] `npm exec nx build logger` — zero TypeScript errors
+- [ ] `npm exec nx run-many --target=build` — all 5 services compile
 - [ ] `npm run lint:all` — zero errors
 
 ---

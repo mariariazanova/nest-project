@@ -1,4 +1,4 @@
-# Phase 1.4: Swagger/OpenAPI Documentation — Completion Report
+﻿# Phase 1.4: Swagger/OpenAPI Documentation — Completion Report
 
 **Project**: Suggestify
 **Phase**: 1.4 — Swagger/OpenAPI Documentation

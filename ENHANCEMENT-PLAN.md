@@ -354,6 +354,11 @@ Currently the Angular `UserService` holds the JWT only in memory — any full-pa
 - Enable `withCredentials: true` on all HTTP requests for cross-origin cookie support
 - Handle CORS credentials on API gateway (`credentials: true`, explicit `origin`)
 
+**WebSocket Impact (Phase 2.2):**
+
+- `SocketService.connect(token)` in the frontend no longer passes the JWT in `auth.token` — the cookie is sent automatically on the WebSocket handshake when `withCredentials: true` is set (already configured in Phase 2.2)
+- `WebSocketProxyGateway.handleConnection()` in `api-gateway` must extract the JWT from `client.handshake.headers.cookie` instead of `client.handshake.auth.token`
+
 **Estimate:** 2-3 days (1 developer)
 
 ---
@@ -415,6 +420,7 @@ Adds ClamAV antivirus scanning to `file-service` as an optional layer on top of 
   }
   ```
 - `ClamScan` instance configured with `clamd` host/port from env vars (`CLAMD_HOST`, `CLAMD_PORT`)
+- After a scan rejection, call `gateway.emitToUser(userId, 'upload-error', { fileId, error: 'File rejected by virus scanner' })` so the frontend shows a toast — `AppComponent`'s `upload-error` handler (Phase 2.2) already covers this; throw the `BadRequestException` after emitting
 
 **Environment variables:**
 
@@ -590,6 +596,8 @@ Test each NestJS service in isolation with real infrastructure — verify both H
   - Load balancers
 - Setup separate environments (dev, staging, prod)
 - **Decide production file storage backend** — the local Docker volume used in Phase 2.1 (File Uploads) does not survive in multi-instance or managed container environments (ECS, Fargate, Kubernetes). Provision S3/GCS/Azure Blob or a shared network filesystem (e.g. EFS on AWS); update `FileService` in `file-service` to use the chosen SDK
+- **WebSocket horizontal scaling (Phase 2.2)** — the proxy pattern in `WebSocketProxyGateway` works on a single `api-gateway` instance. When `api-gateway` scales horizontally, add the Socket.IO Redis adapter (`@socket.io/redis-adapter`) to `notification-service` and all gateway replicas so room membership is shared across instances
+- **upload-progress throttling (Phase 2.2)** — `ProgressDiskStorage` currently emits one RabbitMQ message per chunk. For large files this is high-frequency. Throttle in `file-service` by only calling `emitToUser` when `Math.floor(percent / 5)` changes (every 5% increment) — a `file-service`-only change, no other services affected
 
 **Estimate:** 5-7 days (1 developer)
 

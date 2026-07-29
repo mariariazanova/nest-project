@@ -1,4 +1,4 @@
-# Phase 1.2: Structured Logging with Correlation IDs — Implementation Plan
+﻿# Phase 1.2: Structured Logging with Correlation IDs — Implementation Plan
 
 ## Overview
 
@@ -529,7 +529,7 @@ Test cases:
 1. **Rebuild affected services:**
 
    ```bash
-   pnpm nx run-many --target=build --projects=api-gateway,auth-service,suggestion-service,history-service,favorite-service
+   npm exec nx run-many --target=build --projects=api-gateway,auth-service,suggestion-service,history-service,favorite-service
    docker compose build api-gateway auth-service suggestion-service history-service favorite-service
    docker compose up -d
    ```
@@ -558,7 +558,7 @@ Test cases:
 5. **Verify dev mode formatting locally:**
 
    ```bash
-   pnpm nx serve auth-service
+   npm exec nx serve auth-service
    # Logs should be coloured, human-readable
    ```
 
@@ -574,8 +574,8 @@ Test cases:
 
 ### Library
 
-- [ ] `libs/backend/logger` builds: `pnpm nx build logger`
-- [ ] Library tests pass: `pnpm nx test logger`
+- [ ] `libs/backend/logger` builds: `npm exec nx build logger`
+- [ ] Library tests pass: `npm exec nx test logger`
 - [ ] `@suggestify/backend/logger` path resolves in all services (no TS errors)
 
 ### Correlation ID
@@ -600,7 +600,7 @@ Test cases:
 
 - [ ] Old `LoggingMiddleware` deleted from api-gateway
 - [ ] No remaining `new Logger(...)` from `@nestjs/common` in `main.ts` files
-- [ ] All services compile with zero TypeScript errors: `pnpm nx run-many --target=build`
+- [ ] All services compile with zero TypeScript errors: `npm exec nx run-many --target=build`
 
 ### Tests
 
