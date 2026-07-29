@@ -20,10 +20,10 @@ Activates the Socket.IO infrastructure stubbed in Phase 2.1 and extends it to al
 ❌ **Out of Scope:**
 
 - Persistent notification center / unread badge — notifications are transient toasts only; history clears on dismiss
-- Browser Push Notifications (service workers / `Notification` API) — requires HTTPS + service worker, deferred to Phase 6
+- Browser Push Notifications (service workers / `Notification` API) — out of project scope; toasts cover the real-time feedback need
 - WebSocket horizontal scaling — the proxy pattern works on a single `api-gateway` instance; multi-instance scaling requires the Socket.IO Redis adapter on `notification-service`, deferred to Phase 6
 - Upload chunked via WebSocket (upload-bridge pattern) — our project uses HTTP POST + `ProgressDiskStorage`; no change to that mechanism
-- Notification preferences / per-user muting
+- Notification preferences / per-user muting — out of project scope
 - history-service WebSocket events — history writes are async side-effects; no real-time user notification needed
 
 ## Deviations from ENHANCEMENT-PLAN.md

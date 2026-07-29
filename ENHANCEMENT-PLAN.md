@@ -223,8 +223,6 @@ Enhance Suggestify with file uploads, real-time features, security improvements,
 
 - Integrate Socket.io client
 - Display toast/popup notifications
-- Show notification badge/counter in header
-- Add notification center UI
 
 **Estimate:** 5-7 days (1 developer)
 
@@ -321,7 +319,7 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 
 - Add role field to UserEntity (user, admin)
 - Create RoleGuard decorator for route protection
-- Create admin-service with analytics endpoints (user stats, system metrics)
+- Add `RoleGuard` to `GET /analytics/*` routes in `analytics-service` (Phase 2.3) — no new admin-service needed; the analytics REST API is already built there
 - Protect analytics routes with admin role check
 
 **Frontend Changes:**
@@ -598,6 +596,7 @@ Test each NestJS service in isolation with real infrastructure — verify both H
 - **Decide production file storage backend** — the local Docker volume used in Phase 2.1 (File Uploads) does not survive in multi-instance or managed container environments (ECS, Fargate, Kubernetes). Provision S3/GCS/Azure Blob or a shared network filesystem (e.g. EFS on AWS); update `FileService` in `file-service` to use the chosen SDK
 - **WebSocket horizontal scaling (Phase 2.2)** — the proxy pattern in `WebSocketProxyGateway` works on a single `api-gateway` instance. When `api-gateway` scales horizontally, add the Socket.IO Redis adapter (`@socket.io/redis-adapter`) to `notification-service` and all gateway replicas so room membership is shared across instances
 - **upload-progress throttling (Phase 2.2)** — `ProgressDiskStorage` currently emits one RabbitMQ message per chunk. For large files this is high-frequency. Throttle in `file-service` by only calling `emitToUser` when `Math.floor(percent / 5)` changes (every 5% increment) — a `file-service`-only change, no other services affected
+- **Kafka `user.activity` retention (Phase 2.3)** — set `retention.ms` on the `user.activity` topic to match your analytics needs (e.g. `259200000` = 3 days). Since `analytics-service` writes every event to PostgreSQL immediately, Kafka is a transport only — short retention is safe. Do not apply log compaction to this topic; compaction keeps only the latest message per key (`userId`), which would destroy the event log. Configure via MSK topic settings or `kafka-topics.sh --alter` on self-hosted clusters
 
 **Estimate:** 5-7 days (1 developer)
 
