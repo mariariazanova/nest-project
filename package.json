@@ -118,6 +118,7 @@
     "express": "^5.2.1",
     "file-type": "^16.5.4",
     "helmet": "^8.2.0",
+    "kafkajs": "^2.2.4",
     "migrate-mongo": "^14.0.7",
     "mongoose": "^9.7.3",
     "nestjs-cls": "^6.2.1",

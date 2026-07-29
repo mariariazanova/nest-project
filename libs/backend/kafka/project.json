@@ -1,0 +1,27 @@
+{
+  "name": "kafka",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/kafka/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/kafka"],
+      "options": {
+        "jestConfig": "libs/backend/kafka/jest.config.js"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/backend/kafka",
+        "tsConfig": "libs/backend/kafka/tsconfig.lib.json",
+        "packageJson": "libs/backend/kafka/package.json",
+        "main": "libs/backend/kafka/src/index.ts",
+        "assets": ["libs/backend/kafka/*.md"]
+      }
+    }
+  }
+}

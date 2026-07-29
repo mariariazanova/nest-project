@@ -22,6 +22,7 @@
       ],
       "@suggestify/backend/health": ["./libs/backend/health/src/index.ts"],
       "@suggestify/backend/logger": ["./libs/backend/logger/src/index.ts"],
+      "@suggestify/backend/kafka": ["./libs/backend/kafka/src/index.ts"],
       "@suggestify/shared/contract": ["./libs/shared/contract/src/index.ts"]
     }
   },
