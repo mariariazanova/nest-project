@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { KafkaModule } from '@suggestify/backend/kafka';
 import { FavoriteController } from './favorite.controller';
 import { FavoriteService } from './favorite.service';
 import { FavoriteEntity } from './entities/favorite.entity';
 
 @Module({
   imports: [
+    KafkaModule,
     TypeOrmModule.forFeature([FavoriteEntity]),
     ClientsModule.register([
       {

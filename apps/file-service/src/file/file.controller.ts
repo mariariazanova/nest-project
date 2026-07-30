@@ -32,6 +32,10 @@ import { TsRest, NestControllerInterface } from '@ts-rest/nest';
 import { Response } from 'express';
 import * as path from 'path';
 import { fileContract, Status } from '@suggestify/shared/contract';
+import {
+  UserActivityProducerService,
+  UserActivityType,
+} from '@suggestify/backend/kafka';
 import { FileService } from './file.service';
 
 @TsRest({})
@@ -42,7 +46,10 @@ export class FileController
 {
   private readonly logger = new Logger(FileController.name);
 
-  constructor(private readonly fileService: FileService) {}
+  constructor(
+    private readonly fileService: FileService,
+    private readonly kafka: UserActivityProducerService,
+  ) {}
 
   @Post()
   @UseInterceptors(FileInterceptor('file')) // storage + limits come from MulterModule.registerAsync
@@ -144,6 +151,11 @@ export class FileController
     this.logger.log(`GET /files/${id}/download - userId: ${userId}`);
     const token = await this.fileService.createDownloadToken(userId, id);
     const downloadUrl = `/v1/files/${id}/stream?token=${token}`;
+
+    await this.kafka.emit(UserActivityType.FILE_DOWNLOADED, userId, {
+      fileId: id,
+    });
+
     return { status: Status.Ok, body: { downloadUrl } };
   }
 

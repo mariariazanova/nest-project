@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { UserActivityProducerService } from '@suggestify/backend/kafka';
 import { TokenBlacklistService } from './token-blacklist/token-blacklist.service';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
@@ -71,6 +72,10 @@ describe('AuthService', () => {
             set: jest.fn(),
           },
         },
+        {
+          provide: UserActivityProducerService,
+          useValue: { emit: jest.fn().mockResolvedValue(undefined) },
+        },
       ],
     }).compile();
 
@@ -103,7 +108,9 @@ describe('AuthService', () => {
 
       const result = await service.signUp(signUpDto);
 
-      expect(usersService.findByUsername).toHaveBeenCalledWith(signUpDto.username);
+      expect(usersService.findByUsername).toHaveBeenCalledWith(
+        signUpDto.username,
+      );
       expect(bcrypt.hash).toHaveBeenCalledWith(signUpDto.password, 10);
       expect(usersService.create).toHaveBeenCalledWith({
         username: signUpDto.username,
@@ -121,8 +128,12 @@ describe('AuthService', () => {
     it('should throw ConflictException if username already exists', async () => {
       jest.spyOn(usersService, 'findByUsername').mockResolvedValue(mockUser);
 
-      await expect(service.signUp(signUpDto)).rejects.toThrow(ConflictException);
-      await expect(service.signUp(signUpDto)).rejects.toThrow('Username already exists');
+      await expect(service.signUp(signUpDto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.signUp(signUpDto)).rejects.toThrow(
+        'Username already exists',
+      );
       expect(usersService.create).not.toHaveBeenCalled();
     });
 
@@ -168,8 +179,13 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
-      expect(usersService.findByUsername).toHaveBeenCalledWith(loginDto.username);
-      expect(bcrypt.compare).toHaveBeenCalledWith(loginDto.password, mockUser.password);
+      expect(usersService.findByUsername).toHaveBeenCalledWith(
+        loginDto.username,
+      );
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        loginDto.password,
+        mockUser.password,
+      );
       expect(result).toEqual({
         user: {
           id: mockUser.id,
@@ -182,8 +198,12 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException if user not found', async () => {
       jest.spyOn(usersService, 'findByUsername').mockResolvedValue(null);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
-      await expect(service.login(loginDto)).rejects.toThrow('Invalid credentials');
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'Invalid credentials',
+      );
       expect(bcrypt.compare).not.toHaveBeenCalled();
     });
 
@@ -191,8 +211,12 @@ describe('AuthService', () => {
       jest.spyOn(usersService, 'findByUsername').mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
-      await expect(service.login(loginDto)).rejects.toThrow('Invalid credentials');
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.login(loginDto)).rejects.toThrow(
+        'Invalid credentials',
+      );
       expect(jwtService.sign).not.toHaveBeenCalled();
     });
 
@@ -222,7 +246,9 @@ describe('AuthService', () => {
 
     it('should logout user successfully', async () => {
       jest.spyOn(jwtService, 'decode').mockReturnValue(decodedToken);
-      jest.spyOn(tokenBlacklistService, 'blacklistToken').mockResolvedValue(undefined);
+      jest
+        .spyOn(tokenBlacklistService, 'blacklistToken')
+        .mockResolvedValue(undefined);
 
       const result = await service.logout(mockToken);
 
@@ -254,14 +280,18 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException if token format is invalid', async () => {
       jest.spyOn(jwtService, 'decode').mockReturnValue(null);
 
-      await expect(service.logout(mockToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.logout(mockToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
       await expect(service.logout(mockToken)).rejects.toThrow('Invalid token');
     });
 
     it('should throw UnauthorizedException if decoded token has no exp', async () => {
       jest.spyOn(jwtService, 'decode').mockReturnValue({ sub: 'user-123' });
 
-      await expect(service.logout(mockToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.logout(mockToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should calculate correct TTL for blacklist', async () => {
@@ -269,7 +299,9 @@ describe('AuthService', () => {
       const tokenWithFutureExp = { ...decodedToken, exp: futureExp };
 
       jest.spyOn(jwtService, 'decode').mockReturnValue(tokenWithFutureExp);
-      jest.spyOn(tokenBlacklistService, 'blacklistToken').mockResolvedValue(undefined);
+      jest
+        .spyOn(tokenBlacklistService, 'blacklistToken')
+        .mockResolvedValue(undefined);
 
       await service.logout(mockToken);
 
@@ -278,7 +310,8 @@ describe('AuthService', () => {
         expect.any(Number),
       );
 
-      const actualTTL = (tokenBlacklistService.blacklistToken as jest.Mock).mock.calls[0][1];
+      const actualTTL = (tokenBlacklistService.blacklistToken as jest.Mock).mock
+        .calls[0][1];
       expect(actualTTL).toBeGreaterThan(0);
       expect(actualTTL).toBeLessThanOrEqual(7200);
     });
@@ -300,8 +333,12 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException if user not found', async () => {
       jest.spyOn(usersService, 'findById').mockResolvedValue(null);
 
-      await expect(service.getProfile('non-existent-id')).rejects.toThrow(UnauthorizedException);
-      await expect(service.getProfile('non-existent-id')).rejects.toThrow('User not found');
+      await expect(service.getProfile('non-existent-id')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      await expect(service.getProfile('non-existent-id')).rejects.toThrow(
+        'User not found',
+      );
     });
 
     it('should not return password in profile', async () => {
@@ -321,12 +358,16 @@ describe('AuthService', () => {
     };
 
     it('should validate token successfully', async () => {
-      jest.spyOn(tokenBlacklistService, 'isTokenBlacklisted').mockResolvedValue(false);
+      jest
+        .spyOn(tokenBlacklistService, 'isTokenBlacklisted')
+        .mockResolvedValue(false);
       jest.spyOn(jwtService, 'verify').mockReturnValue(decodedPayload);
 
       const result = await service.validateToken(mockToken);
 
-      expect(tokenBlacklistService.isTokenBlacklisted).toHaveBeenCalledWith(mockToken);
+      expect(tokenBlacklistService.isTokenBlacklisted).toHaveBeenCalledWith(
+        mockToken,
+      );
       expect(jwtService.verify).toHaveBeenCalledWith(mockToken, {
         secret: 'test-secret',
       });
@@ -338,7 +379,9 @@ describe('AuthService', () => {
     });
 
     it('should return invalid if token is blacklisted', async () => {
-      jest.spyOn(tokenBlacklistService, 'isTokenBlacklisted').mockResolvedValue(true);
+      jest
+        .spyOn(tokenBlacklistService, 'isTokenBlacklisted')
+        .mockResolvedValue(true);
 
       const result = await service.validateToken(mockToken);
 
@@ -347,7 +390,9 @@ describe('AuthService', () => {
     });
 
     it('should return invalid if token verification fails', async () => {
-      jest.spyOn(tokenBlacklistService, 'isTokenBlacklisted').mockResolvedValue(false);
+      jest
+        .spyOn(tokenBlacklistService, 'isTokenBlacklisted')
+        .mockResolvedValue(false);
       jest.spyOn(jwtService, 'verify').mockImplementation(() => {
         throw new Error('Invalid token');
       });
@@ -358,7 +403,9 @@ describe('AuthService', () => {
     });
 
     it('should handle expired tokens', async () => {
-      jest.spyOn(tokenBlacklistService, 'isTokenBlacklisted').mockResolvedValue(false);
+      jest
+        .spyOn(tokenBlacklistService, 'isTokenBlacklisted')
+        .mockResolvedValue(false);
       jest.spyOn(jwtService, 'verify').mockImplementation(() => {
         throw new Error('jwt expired');
       });
@@ -369,7 +416,9 @@ describe('AuthService', () => {
     });
 
     it('should handle malformed tokens', async () => {
-      jest.spyOn(tokenBlacklistService, 'isTokenBlacklisted').mockResolvedValue(false);
+      jest
+        .spyOn(tokenBlacklistService, 'isTokenBlacklisted')
+        .mockResolvedValue(false);
       jest.spyOn(jwtService, 'verify').mockImplementation(() => {
         throw new Error('jwt malformed');
       });
@@ -451,7 +500,9 @@ describe('AuthService', () => {
 
       jest.spyOn(usersService, 'findByUsername').mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword');
-      jest.spyOn(usersService, 'create').mockRejectedValue(new Error('Database error'));
+      jest
+        .spyOn(usersService, 'create')
+        .mockRejectedValue(new Error('Database error'));
 
       await expect(service.signUp(signUpDto)).rejects.toThrow('Database error');
     });
@@ -462,7 +513,9 @@ describe('AuthService', () => {
         password: 'Password123!',
       };
 
-      jest.spyOn(usersService, 'findByUsername').mockRejectedValue(new Error('Database error'));
+      jest
+        .spyOn(usersService, 'findByUsername')
+        .mockRejectedValue(new Error('Database error'));
 
       await expect(service.login(loginDto)).rejects.toThrow('Database error');
     });

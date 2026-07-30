@@ -61,6 +61,26 @@ services:
       timeout: 5s
       retries: 5
 
+  # PostgreSQL - Analytics Service
+  postgres-analytics:
+    image: postgres:15-alpine
+    container_name: postgres-analytics
+    environment:
+      POSTGRES_DB: analytics_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5436:5432'
+    volumes:
+      - postgres-analytics-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # PostgreSQL - File Service
   postgres-files:
     image: postgres:15-alpine
@@ -241,6 +261,8 @@ services:
       - CONSUL_HOST=consul
       - CONSUL_PORT=8500
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - KAFKA_BROKERS=kafka:9092
+      - SERVICE_NAME=auth-service
       - SERVICE_HOST=auth-service
       - CRYPT_SALT=10
     #    ports:
@@ -253,6 +275,8 @@ services:
       consul:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - microservices-network
@@ -295,6 +319,8 @@ services:
       - CONSUL_HOST=consul
       - CONSUL_PORT=8500
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - KAFKA_BROKERS=kafka:9092
+      - SERVICE_NAME=suggestion-service
       - AUTH_SERVICE_URL=http://auth-service:3001
       - SERVICE_HOST=suggestion-service
     #    ports:
@@ -307,6 +333,8 @@ services:
       consul:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - microservices-network
@@ -345,6 +373,8 @@ services:
       - CONSUL_HOST=consul
       - CONSUL_PORT=8500
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - KAFKA_BROKERS=kafka:9092
+      - SERVICE_NAME=history-service
       - AUTH_SERVICE_URL=http://auth-service:3001
       - SUGGESTION_SERVICE_URL=http://suggestion-service:3002
       - SERVICE_HOST=history-service
@@ -358,6 +388,8 @@ services:
       consul:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - microservices-network
@@ -400,6 +432,8 @@ services:
       - CONSUL_HOST=consul
       - CONSUL_PORT=8500
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - KAFKA_BROKERS=kafka:9092
+      - SERVICE_NAME=favorite-service
       - SERVICE_HOST=favorite-service
       - CORS_ORIGIN=*
     #    ports:
@@ -412,6 +446,8 @@ services:
       consul:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - microservices-network
@@ -455,6 +491,8 @@ services:
       - CONSUL_HOST=consul
       - CONSUL_PORT=8500
       - RABBITMQ_URL=amqp://rabbit:rabbitpass@rabbitmq:5672
+      - KAFKA_BROKERS=kafka:9092
+      - SERVICE_NAME=file-service
       - SERVICE_HOST=file-service
       - CORS_ORIGIN=*
     volumes:
@@ -465,6 +503,8 @@ services:
       rabbitmq:
         condition: service_healthy
       consul:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - microservices-network
@@ -518,6 +558,50 @@ services:
           '--tries=1',
           '--spider',
           'http://localhost:3006/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Analytics Service
+  analytics-service:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.analytics-service
+    container_name: analytics-service
+    environment:
+      - NODE_ENV=development
+      - PORT=3007
+      - DB_HOST=postgres-analytics
+      - DB_PORT=5432
+      - DB_NAME=analytics_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - KAFKA_BROKERS=kafka:9092
+      - SERVICE_NAME=analytics-service
+      - CONSUL_HOST=consul
+      - CONSUL_PORT=8500
+      - SERVICE_HOST=analytics-service
+    depends_on:
+      postgres-analytics:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--quiet',
+          '--tries=1',
+          '--spider',
+          'http://localhost:3007/health',
         ]
       interval: 30s
       timeout: 10s
@@ -594,6 +678,8 @@ services:
       file-service:
         condition: service_healthy
       notification-service:
+        condition: service_healthy
+      analytics-service:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -681,6 +767,7 @@ volumes:
   postgres-suggestions-data:
   postgres-favorites-data:
   postgres-files-data:
+  postgres-analytics-data:
   uploads:
   mongodb-data:
   redis-data:

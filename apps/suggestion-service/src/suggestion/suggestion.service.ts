@@ -6,6 +6,10 @@ import { Cache } from 'cache-manager';
 import { ClientProxy } from '@nestjs/microservices';
 import { ClsService } from 'nestjs-cls';
 import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
+import {
+  UserActivityProducerService,
+  UserActivityType,
+} from '@suggestify/backend/kafka';
 
 import { FilterItemsDto } from './dto/filter-items.dto';
 import { BookEntity } from './entities/book.entity';
@@ -46,6 +50,7 @@ export class SuggestionService {
     private notificationClient: ClientProxy,
 
     private readonly cls: ClsService,
+    private readonly kafka: UserActivityProducerService,
   ) {
     this.categoryRepoMap = {
       [Category.BOOK]: this.bookRepo,
@@ -152,6 +157,11 @@ export class SuggestionService {
         this.logger.error('Exception emitting event:', error);
       }
     }
+
+    await this.kafka.emit(UserActivityType.SUGGESTION_SEARCHED, userId, {
+      category,
+      count: items.length,
+    });
 
     return this.enrichSuggestionWithMediaDetails(suggestion);
   }

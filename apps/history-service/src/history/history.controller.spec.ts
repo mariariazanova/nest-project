@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClsService } from 'nestjs-cls';
+import { UserActivityProducerService } from '@suggestify/backend/kafka';
 import { HistoryController } from './history.controller';
 import { HistoryService } from './history.service';
 
@@ -76,6 +77,10 @@ describe('HistoryController', () => {
             set: jest.fn(),
             get: jest.fn(),
           },
+        },
+        {
+          provide: UserActivityProducerService,
+          useValue: { emit: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();

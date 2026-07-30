@@ -23,6 +23,10 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { TsRest, NestControllerInterface } from '@ts-rest/nest';
 import { favoriteContract, Status } from '@suggestify/shared/contract';
+import {
+  UserActivityProducerService,
+  UserActivityType,
+} from '@suggestify/backend/kafka';
 import { FavoriteService } from './favorite.service';
 import { CreateFavoriteDto } from './dto/create-favorite.dto';
 import { FavoriteCategory } from './entities/favorite.entity';
@@ -38,6 +42,7 @@ export class FavoriteController
 
   constructor(
     private readonly favoriteService: FavoriteService,
+    private readonly kafka: UserActivityProducerService,
     @Inject('RABBITMQ_CLIENT') private readonly rabbitMQClient: ClientProxy,
     @Inject('NOTIFICATION_CLIENT')
     private readonly notificationClient: ClientProxy,
@@ -92,6 +97,10 @@ export class FavoriteController
       favoriteCategory,
     );
 
+    await this.kafka.emit(UserActivityType.FAVORITES_VIEWED, userId, {
+      count: result.length,
+    });
+
     return { status: Status.Ok, body: result };
   }
 
@@ -144,6 +153,12 @@ export class FavoriteController
 
     const result = await this.favoriteService.addFavorite(userId, dto);
 
+    await this.kafka.emit(UserActivityType.FAVORITE_ADDED, userId, {
+      favoriteId: result.id,
+      category: result.category,
+      title: result.title,
+    });
+
     this.notificationClient
       .emit('favorite-added', {
         userId,
@@ -178,12 +193,15 @@ export class FavoriteController
 
     const removed = await this.favoriteService.removeFavorite(userId, id);
 
-    this.rabbitMQClient
-      .emit('favorite.deleted', { favoriteId: id })
-      .subscribe({
-        error: (err) =>
-          this.logger.error('Failed to emit favorite.deleted:', err),
-      });
+    await this.kafka.emit(UserActivityType.FAVORITE_REMOVED, userId, {
+      favoriteId: id,
+      title: removed.title,
+    });
+
+    this.rabbitMQClient.emit('favorite.deleted', { favoriteId: id }).subscribe({
+      error: (err) =>
+        this.logger.error('Failed to emit favorite.deleted:', err),
+    });
     this.notificationClient
       .emit('favorite-deleted', {
         userId,

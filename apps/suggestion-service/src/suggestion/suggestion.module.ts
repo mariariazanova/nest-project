@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { KafkaModule } from '@suggestify/backend/kafka';
 import { SuggestionController } from './suggestion.controller';
 import { SuggestionService } from './suggestion.service';
 import { BookEntity } from './entities/book.entity';
@@ -15,6 +16,7 @@ import { SeedService } from '../seed.service';
 
 @Module({
   imports: [
+    KafkaModule,
     TypeOrmModule.forFeature([
       BookEntity,
       FilmEntity,

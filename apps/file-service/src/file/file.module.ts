@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
+import { KafkaModule } from '@suggestify/backend/kafka';
 import { FileEntity } from './entities/file.entity';
 import { FileService } from './file.service';
 import { FileController } from './file.controller';
@@ -11,6 +12,7 @@ import { ProgressDiskStorage } from './progress-disk-storage';
 
 @Module({
   imports: [
+    KafkaModule,
     TypeOrmModule.forFeature([FileEntity]),
     SocketModule,
     MulterModule.registerAsync({

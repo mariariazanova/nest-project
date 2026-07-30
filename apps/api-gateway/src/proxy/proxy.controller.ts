@@ -38,4 +38,9 @@ export class ProxyController {
     }
     return this.proxyService.forward(req, res, 'file-service');
   }
+
+  @All(['analytics', 'analytics/*path'])
+  async proxyAnalytics(@Req() req: Request, @Res() res: Response) {
+    return this.proxyService.forward(req, res, 'analytics-service');
+  }
 }

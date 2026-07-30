@@ -11,6 +11,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fromBuffer as fileTypeFromBuffer } from 'file-type';
 import sanitize from 'sanitize-filename';
+import {
+  UserActivityProducerService,
+  UserActivityType,
+} from '@suggestify/backend/kafka';
 import { FileEntity } from './entities/file.entity';
 import { SocketGateway } from '../socket/socket.gateway';
 import { ConfigService } from '@nestjs/config';
@@ -46,6 +50,7 @@ export class FileService {
     private readonly jwtService: JwtService,
     private readonly gateway: SocketGateway,
     private readonly config: ConfigService,
+    private readonly kafka: UserActivityProducerService,
   ) {
     this.uploadDir = this.config.get<string>('UPLOAD_DIR', '/uploads');
   }
@@ -97,6 +102,13 @@ export class FileService {
 
     this.gateway.emitToUser(userId, 'upload-complete', {
       fileId,
+      originalName: entity.originalName,
+      mimeType: entity.mimeType,
+      size: entity.size,
+    });
+
+    await this.kafka.emit(UserActivityType.FILE_UPLOADED, userId, {
+      fileId: entity.id,
       originalName: entity.originalName,
       mimeType: entity.mimeType,
       size: entity.size,
@@ -166,6 +178,11 @@ export class FileService {
     await this.repo.delete(fileId);
 
     this.gateway.emitToUser(userId, 'file-deleted', {
+      fileId,
+      originalName: file.originalName,
+    });
+
+    await this.kafka.emit(UserActivityType.FILE_DELETED, userId, {
       fileId,
       originalName: file.originalName,
     });

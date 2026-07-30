@@ -229,6 +229,7 @@ export class ProxyService {
       base['suggestions'] = '/v1/suggestion';
       base['favorites'] = '/v1/favorite';
       base['history'] = '/v1/history';
+      base['analytics'] = '/v1/analytics/events';
     }
 
     if (url.includes('/auth/users') && !url.includes('/me')) {
@@ -258,6 +259,12 @@ export class ProxyService {
     if (url.includes('/history')) {
       base['suggestions'] = '/v1/suggestion';
       base['favorites'] = '/v1/favorite';
+    }
+
+    if (url.includes('/analytics')) {
+      base['suggestions'] = '/v1/suggestion';
+      base['favorites'] = '/v1/favorite';
+      base['history'] = '/v1/history';
     }
 
     return base;

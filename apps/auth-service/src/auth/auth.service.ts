@@ -10,6 +10,10 @@ import { JwtService } from '@nestjs/jwt';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import * as bcrypt from 'bcrypt';
+import {
+  UserActivityProducerService,
+  UserActivityType,
+} from '@suggestify/backend/kafka';
 import { UsersService } from '../users/users.service';
 import { SignUpDto, LoginDto } from './dto';
 import { TokenBlacklistService } from './token-blacklist/token-blacklist.service';
@@ -23,6 +27,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly tokenBlacklistService: TokenBlacklistService,
     private readonly configService: ConfigService,
+    private readonly kafka: UserActivityProducerService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
@@ -44,6 +49,13 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.username);
 
     this.logger.log(`User registered successfully: ${user.username}`);
+
+    await this.kafka.emit(
+      UserActivityType.USER_REGISTERED,
+      user.id,
+      {},
+      user.username,
+    );
 
     return {
       user: {
@@ -71,6 +83,13 @@ export class AuthService {
 
     this.logger.log(`User logged in successfully: ${user.username}`);
 
+    await this.kafka.emit(
+      UserActivityType.USER_LOGGED_IN,
+      user.id,
+      {},
+      user.username,
+    );
+
     return {
       user: {
         id: user.id,
@@ -95,6 +114,14 @@ export class AuthService {
 
       if (expiresIn <= 0) {
         this.logger.debug('Token already expired, skipping blacklist');
+
+        await this.kafka.emit(
+          UserActivityType.USER_LOGGED_OUT,
+          decoded.sub,
+          {},
+          decoded.username,
+        );
+
         return {
           message: 'Logged out successfully',
           statusCode: 200,
@@ -102,6 +129,12 @@ export class AuthService {
       }
 
       await this.tokenBlacklistService.blacklistToken(token, expiresIn);
+      await this.kafka.emit(
+        UserActivityType.USER_LOGGED_OUT,
+        decoded.sub,
+        {},
+        decoded.username,
+      );
 
       this.logger.log(`User logged out: ${decoded.username}`);
 

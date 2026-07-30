@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import { UserActivityProducerService } from '@suggestify/backend/kafka';
 import { FavoriteController } from './favorite.controller';
 import { FavoriteService } from './favorite.service';
 import { FavoriteCategory, FavoriteEntity } from './entities/favorite.entity';
@@ -50,6 +51,10 @@ describe('FavoriteController', () => {
         {
           provide: 'NOTIFICATION_CLIENT',
           useValue: mockNotificationClient,
+        },
+        {
+          provide: UserActivityProducerService,
+          useValue: { emit: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();

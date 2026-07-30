@@ -11,6 +11,10 @@ import { EventPattern, Payload } from '@nestjs/microservices';
 import { ClsService } from 'nestjs-cls';
 import { TsRest, NestControllerInterface } from '@ts-rest/nest';
 import { historyContract, Status } from '@suggestify/shared/contract';
+import {
+  UserActivityProducerService,
+  UserActivityType,
+} from '@suggestify/backend/kafka';
 import { HistoryService } from './history.service';
 import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
 
@@ -26,6 +30,7 @@ export class HistoryController
   constructor(
     private readonly historyService: HistoryService,
     private readonly cls: ClsService,
+    private readonly kafka: UserActivityProducerService,
   ) {}
 
   @Get()
@@ -41,6 +46,10 @@ export class HistoryController
   @ApiResponse({ status: Status.Ok, description: 'Array of history entries.' })
   async getAll(@Headers('X-User-Id') userId: string) {
     const result = await this.historyService.getUserHistory(userId);
+
+    await this.kafka.emit(UserActivityType.HISTORY_VIEWED, userId, {
+      count: result.length,
+    });
 
     return {
       status: Status.Ok,

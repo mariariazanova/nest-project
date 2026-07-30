@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import { ClsService } from 'nestjs-cls';
+import { UserActivityProducerService } from '@suggestify/backend/kafka';
 import { SuggestionService } from './suggestion.service';
 import { BookEntity } from './entities/book.entity';
 import { FilmEntity } from './entities/film.entity';
@@ -90,6 +91,10 @@ describe('SuggestionService', () => {
             set: jest.fn(),
             run: jest.fn((fn: () => unknown) => fn()),
           },
+        },
+        {
+          provide: UserActivityProducerService,
+          useValue: { emit: jest.fn().mockResolvedValue(undefined) },
         },
       ],
     }).compile();
