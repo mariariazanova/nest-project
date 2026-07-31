@@ -1,0 +1,13 @@
+services:
+  auth-service:
+    ports:
+      - '3001:3001'
+  suggestion-service:
+    ports:
+      - '3002:3002'
+  history-service:
+    ports:
+      - '3003:3003'
+  favorite-service:
+    ports:
+      - '3004:3004'

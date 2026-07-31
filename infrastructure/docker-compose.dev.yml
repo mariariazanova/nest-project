@@ -1,0 +1,58 @@
+# Development tools — NOT for production.
+# Run with: docker compose -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.dev.yml up -d
+
+services:
+  # pgAdmin — web UI for all 3 PostgreSQL instances
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - microservices-network
+    depends_on:
+      - postgres-auth
+      - postgres-suggestions
+      - postgres-favorites
+    restart: unless-stopped
+
+  # Mongo Express — web UI for MongoDB (history-service)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: rootpass
+      ME_CONFIG_MONGODB_URL: mongodb://root:rootpass@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    ports:
+      - '8081:8081'
+    networks:
+      - microservices-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Redis Commander — web UI for Redis
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+      REDIS_HOSTS: api-gateway:redis:6379:0:redispass,auth:redis:6379:1:redispass,suggestions:redis:6379:2:redispass,favorites:redis:6379:3:redispass,history:redis:6379:4:redispass
+    ports:
+      - '8082:8081'
+    networks:
+      - microservices-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgadmin-data:

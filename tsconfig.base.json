@@ -1,0 +1,30 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2021",
+    "module": "esnext",
+    "lib": ["ES2021", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@suggestify/backend/metrics": ["./libs/backend/metrics/src/index.ts"],
+      "@suggestify/backend/consul": ["./libs/backend/consul/src/index.ts"],
+      "@suggestify/backend/circuit-breaker": [
+        "./libs/backend/circuit-breaker/src/index.ts"
+      ],
+      "@suggestify/backend/health": ["./libs/backend/health/src/index.ts"],
+      "@suggestify/backend/logger": ["./libs/backend/logger/src/index.ts"],
+      "@suggestify/backend/kafka": ["./libs/backend/kafka/src/index.ts"],
+      "@suggestify/shared/contract": ["./libs/shared/contract/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

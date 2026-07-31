@@ -1,0 +1,24 @@
+{
+  "name": "suggestion-service-e2e",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "implicitDependencies": [
+    "suggestion-service"
+  ],
+  "projectType": "application",
+  "targets": {
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{e2eProjectRoot}"
+      ],
+      "options": {
+        "jestConfig": "test/e2e/suggestion-service/jest.config.cts",
+        "passWithNoTests": true
+      },
+      "dependsOn": [
+        "suggestion-service:build",
+        "suggestion-service:serve"
+      ]
+    }
+  }
+}

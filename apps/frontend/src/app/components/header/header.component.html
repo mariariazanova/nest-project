@@ -1,0 +1,51 @@
+<header class="header">
+  <div class="header-container">
+    <nav class="nav">
+      <a routerLink="/" class="nav-link">Polecajka</a>
+
+      @if (isLoggedIn()) {
+        <a [routerLink]="['/recommendations-history']" class="nav-link">
+          Historia rekomendacji
+        </a>
+      }
+
+      @if (isLoggedIn()) {
+        <a [routerLink]="['/favorites']" class="nav-link">
+          Ulubione
+        </a>
+      }
+    </nav>
+
+    @if (!isLoggedIn()) {
+      <button class="login-button" (click)="openLoginModal()">
+        Zaloguj się
+      </button>
+    }
+
+    @if (isLoggedIn()) {
+      <div class="user-profile">
+        <div class="profile-circle">
+          <span>{{ userName() }}</span>
+        </div>
+        <button class="login-button" (click)="onLogout()">Wyloguj się</button>
+      </div>
+    }
+  </div>
+</header>
+
+@if (isLoginModalOpen) {
+  <app-login
+    (login)="onLogin($event)"
+    (loginCancel)="closeLoginModal()"
+  ></app-login>
+}
+
+@if (isLoginModalOpen) {
+  <div
+    class="login-modal-overlay"
+    role="button"
+    tabindex="0"
+    (click)="closeLoginModal()"
+    (keydown.escape)="closeLoginModal()"
+  ></div>
+}

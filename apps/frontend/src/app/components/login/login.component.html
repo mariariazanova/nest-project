@@ -1,0 +1,57 @@
+<div class="login-modal">
+  <h2>Login</h2>
+
+  <form [formGroup]="loginForm">
+    <div class="register-container">
+      <input
+        formControlName="isNewAccountCreated"
+        type="checkbox"
+        id="createAccount"
+      />
+
+      <label for="createAccount" class="register-label">Chcę założyć konto</label>
+    </div>
+
+    <div>
+      <input
+        formControlName="userName"
+        type="text"
+        name="userName"
+        placeholder="User name"
+        autocomplete="off"
+      />
+
+      @if (loginForm.get('userName')?.touched && loginForm.get('userName')?.invalid) {
+        <p class="error-message">
+          {{ getErrorMessage('userName') }}
+        </p>
+      }
+    </div>
+
+    <div>
+      <input
+        formControlName="password"
+        type="password"
+        name="password"
+        placeholder="Password"
+        autocomplete="off"
+      />
+
+      @if (loginForm.get('password')?.touched && loginForm.get('password')?.invalid) {
+        <p class="error-message">
+          {{ getErrorMessage('password') }}
+        </p>
+      }
+    </div>
+  </form>
+
+  <button
+    class="button-primary login-button"
+    [disabled]="loginForm.invalid"
+    (click)="onLogin()"
+  >
+    Login
+  </button>
+
+  <button class="button-secondary" (click)="onCancel()">Cancel</button>
+</div>

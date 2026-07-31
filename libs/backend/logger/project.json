@@ -1,0 +1,27 @@
+{
+  "name": "logger",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/backend/logger/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/backend/logger"],
+      "options": {
+        "jestConfig": "libs/backend/logger/jest.config.js"
+      }
+    },
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/backend/logger",
+        "tsConfig": "libs/backend/logger/tsconfig.lib.json",
+        "packageJson": "libs/backend/logger/package.json",
+        "main": "libs/backend/logger/src/index.ts",
+        "assets": ["libs/backend/logger/*.md"]
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.recommendations-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 4rem;
+  align-items: center;
+  text-align: center;
+
+  h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+
+  .recommendation-list {
+    width: 95%;
+    max-height: 50vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #dee3ed;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 4px;
+      background: #5e636e;
+
+      &:hover {
+        background: #4f9290;
+      }
+    }
+
+    .recommendation-item {
+      margin: 10px 0;
+      font-size: 1.3rem;
+      position: relative;
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+        padding: 10px 20px;
+        border-radius: 8px;
+        white-space: nowrap;
+        cursor: help;
+        transition: background-color 0.3s, box-shadow 0.3s;
+
+        &:hover {
+          background-color: #2B7A78;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+      }
+    }
+  }
+}
+
+.tooltip-text {
+  position: absolute;
+  max-width: 300px;
+  min-width: 200px;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  padding: 10px;
+  background-color: #333;
+  color: #fff;
+  border-radius: 5px;
+  text-align: left;
+  z-index: 1;
+  transition: opacity 0.3s;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow: auto;
+  box-sizing: border-box;
+
+  @media (max-width: 768px) {
+    left: auto;
+    right: 105%;
+  }
+}
+
+.no-suggestions {
+  font-family: 'Arial', sans-serif;
+  margin-bottom: 2rem;
+}

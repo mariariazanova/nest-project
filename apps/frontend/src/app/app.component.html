@@ -1,0 +1,15 @@
+<app-header></app-header>
+
+@if (notification.message()) {
+  <div class="toast-notification">
+    <span>{{ notification.message() }}</span>
+    <button
+      class="toast-notification__dismiss"
+      (click)="notification.dismiss()"
+    >
+      ✕
+    </button>
+  </div>
+}
+
+<router-outlet />

@@ -1,0 +1,52 @@
+# Dockerfile for file-service — extends the shared nx-services pattern with
+# /uploads directory pre-created and owned by nodejs so the named volume
+# initializes with the correct permissions on first container start.
+ARG SERVICE_NAME=file-service
+ARG SERVICE_PORT=3005
+
+FROM node:24-alpine AS builder
+ARG SERVICE_NAME
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY tsconfig*.json ./
+COPY nx.json ./
+
+RUN npm config set fetch-timeout 600000 && npm ci
+
+COPY apps/${SERVICE_NAME} ./apps/${SERVICE_NAME}
+COPY libs ./libs
+
+RUN npx nx build ${SERVICE_NAME} --prod
+
+RUN npm prune --omit=dev
+
+FROM node:24-alpine AS production
+ARG SERVICE_NAME
+ARG SERVICE_PORT
+
+RUN apk add --no-cache dumb-init
+
+WORKDIR /app
+
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+COPY package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist/apps/${SERVICE_NAME} ./dist
+
+# Pre-create upload directories so the named volume inherits nodejs ownership
+# on first initialization (Docker copies image dir contents into empty volumes).
+RUN mkdir -p /uploads/temp && chown -R nodejs:nodejs /uploads
+
+RUN chown -R nodejs:nodejs ./dist
+USER nodejs
+
+EXPOSE ${SERVICE_PORT}
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:${SERVICE_PORT}/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/main.js"]

@@ -1,0 +1,9 @@
+<div class="main-container">
+  <h1>{{ appTitle }}</h1>
+
+  @if (!recommendationReceived()) {
+    <app-smart-picks></app-smart-picks>
+  }
+
+  <app-recommendations></app-recommendations>
+</div>

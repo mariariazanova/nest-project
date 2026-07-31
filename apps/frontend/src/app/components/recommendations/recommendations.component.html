@@ -1,0 +1,43 @@
+@if (isRecommendationsPageShown) {
+  @if (recommendations?.length) {
+    <div class="recommendations-container">
+      <h2>Polecamy:</h2>
+
+      <div class="recommendation-list">
+        @for (item of recommendations!; track item.id) {
+          <div class="recommendation-item">
+            <div
+              class="tooltip"
+              (mouseenter)="showTooltip(item, $event)"
+              (mouseleave)="hideTooltip()"
+            >
+              {{ item.title }}
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <p class="no-suggestions">Nie możemy niczego polecić. Posprobuj zmienić wybór</p>
+  }
+
+  @if (activeTooltip) {
+    <div
+      class="tooltip-text"
+      [style.top.px]="tooltipPosition.top"
+      [style.left.px]="tooltipPosition.left"
+    >
+      <p>{{ activeTooltip.description }}</p>
+
+      <p>{{ activeTooltip.year }}</p>
+
+      {{ activeTooltip.singer || activeTooltip.author || activeTooltip.publisher || activeTooltip.director }}
+    </div>
+  }
+
+  <button class="suggestion-button" (click)="returnChoicePage()">Powrót do pytań</button>
+}
+
+@if (isLoading) {
+  Loading ...
+}

@@ -1,0 +1,77 @@
+<div class="history-container">
+  <h2>Twoja historia rekomendacji</h2>
+
+  @if (suggestionHistory()?.length) {
+    <div class="history-grid">
+      @for (history of suggestionHistory()!; track history.id) {
+        <div class="history-card">
+          <p><strong>Data:</strong> {{ history.timestamp | date: 'short' }}</p>
+          <p>
+            <strong>Nastrój:</strong>
+            {{ getLabel(group.MOOD, history.criteria.mood!) }}
+          </p>
+          <p>
+            <strong>Kategoria:</strong>
+            {{ getLabel(group.CATEGORY, history.criteria.category!) }}
+          </p>
+          <p>
+            <strong>Gatunek:</strong>
+            {{
+              genGenreLabel(history.criteria.genre, history.criteria.category!)
+            }}
+          </p>
+          <p>
+            <strong>Wydarzenia:</strong>
+            {{
+              history.criteria.tag
+                ? getLabel(group.TAG, history.criteria.tag)
+                : '-'
+            }}
+          </p>
+
+          <p><strong>Polecenia:</strong></p>
+
+          @if (history.suggestions.length) {
+            <div>
+              <ul class="suggestion-grid">
+                @for (item of history.suggestions; track item.id) {
+                  <li class="suggestion-item">
+                    <span class="suggestion-title">{{ item.title }}</span>
+                    <button
+                      class="favourite-button"
+                      [class.added]="
+                        isFavourite(history.criteria.category!, item.id)
+                      "
+                      (click)="
+                        toggleFavourite(
+                          history.criteria.category!,
+                          item.id,
+                          item.title
+                        )
+                      "
+                      [title]="
+                        isFavourite(history.criteria.category!, item.id)
+                          ? 'Usuń z ulubionych'
+                          : 'Dodaj do ulubionych'
+                      "
+                    >
+                      {{
+                        isFavourite(history.criteria.category!, item.id)
+                          ? '★'
+                          : '☆'
+                      }}
+                    </button>
+                  </li>
+                }
+              </ul>
+            </div>
+          } @else {
+            <p>-</p>
+          }
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="empty-history">Twoja historia jest pusta.</p>
+  }
+</div>

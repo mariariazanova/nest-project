@@ -1,0 +1,307 @@
+import {
+  Injectable,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Logger,
+} from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { Request, Response } from 'express';
+import { firstValueFrom } from 'rxjs';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { ClsService } from 'nestjs-cls';
+import { ConsulService } from '@suggestify/backend/consul';
+import { CircuitBreakerService } from '@suggestify/backend/circuit-breaker';
+import { CORRELATION_ID_KEY } from '@suggestify/backend/logger';
+
+@Injectable()
+export class ProxyService {
+  private readonly logger = new Logger(ProxyService.name);
+
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly consulService: ConsulService,
+    private readonly circuitBreaker: CircuitBreakerService,
+    private readonly cls: ClsService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
+
+  async forward(req: Request, res: Response, serviceName: string) {
+    try {
+      this.logger.debug(
+        `Forward request with body: ${JSON.stringify(req.body)}`,
+      );
+
+      // Discover service URL
+      const serviceUrl = await this.discoverServiceUrl(serviceName);
+      this.logger.debug(`Discovered service URL: ${serviceUrl}`);
+
+      if (!serviceUrl) {
+        throw new HttpException(
+          `Service ${serviceName} not available`,
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+
+      // Build target URL
+      const targetUrl = this.buildTargetUrl(serviceUrl, req);
+      const isMultipartRequest = String(
+        req.headers['content-type'] ?? '',
+      ).includes('multipart/form-data');
+      const headers = {
+        ...this.filterHeaders(req.headers),
+        'cache-control': 'no-cache, no-store, must-revalidate',
+        pragma: 'no-cache',
+        'x-correlation-id': this.cls.get(CORRELATION_ID_KEY) ?? '',
+      };
+      // Restore content-length for multipart so downstream multer can size the upload
+      if (isMultipartRequest && req.headers['content-length']) {
+        headers['content-length'] = req.headers['content-length'];
+      }
+
+      if (req['user'] && req['user']['userId']) {
+        headers['X-User-Id'] = req['user']['userId'];
+      }
+
+      // Multipart uploads must be forwarded as a raw stream — body-parser does
+      // not consume multipart bodies, so req is still readable and req.body
+      // contains only text fields (no file data).
+      const requestData = isMultipartRequest ? req : req.body;
+
+      // Execute with circuit breaker
+      const response = await this.circuitBreaker.execute(
+        `${serviceName}-${req.method}-${req.url}`,
+        async () => {
+          try {
+            return await firstValueFrom(
+              this.httpService.request({
+                method: req.method,
+                url: targetUrl,
+                headers,
+                data: requestData,
+                params: req.query,
+                timeout: 30000,
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
+              }),
+            );
+          } catch (error) {
+            const err = error as {
+              response?: { status: number; data: unknown };
+            };
+            // If 4xx - don't throw error, only return response
+            if (err.response?.status >= 400 && err.response?.status < 500) {
+              this.logger.debug(
+                `Client error ${err.response.status} - not a circuit breaker failure`,
+              );
+              // Return object (it's not an error for Circuit Breaker)
+              return {
+                status: err.response.status,
+                data: err.response.data,
+              };
+            }
+            // If 5xx or timeout - throw error (Circuit Breaker will count it)
+            throw error;
+          }
+        },
+        () => {
+          this.logger.error(
+            'Service temporarily unavailable (circuit breaker triggered)',
+          );
+          throw new HttpException(
+            'Service temporarily unavailable',
+            HttpStatus.SERVICE_UNAVAILABLE,
+          );
+        },
+      );
+
+      this.logger.debug(
+        `Received response from target service: ${JSON.stringify(response.data)}`,
+      );
+
+      // Forward response
+      res.status(response.status).json({
+        data: response.data,
+        links: this.buildResponseLinks(req.url),
+      });
+    } catch (error) {
+      this.logger.error(`Catch error: ${error}`);
+      this.handleError(error, res);
+    }
+  }
+
+  // Binary passthrough — skips JSON envelope and circuit breaker; used for file downloads
+  async forwardStream(req: Request, res: Response, serviceName: string) {
+    try {
+      const serviceUrl = await this.discoverServiceUrl(serviceName);
+      if (!serviceUrl) {
+        res
+          .status(503)
+          .json({ message: `Service ${serviceName} not available` });
+        return;
+      }
+
+      const targetUrl = this.buildTargetUrl(serviceUrl, req);
+      const headers = {
+        ...this.filterHeaders(req.headers),
+        'x-correlation-id': this.cls.get(CORRELATION_ID_KEY) ?? '',
+      };
+
+      const response = await firstValueFrom(
+        this.httpService.request({
+          method: req.method,
+          url: targetUrl,
+          headers,
+          params: req.query,
+          responseType: 'arraybuffer',
+          timeout: 30000,
+          validateStatus: () => true,
+        }),
+      );
+
+      res.status(response.status);
+
+      const contentType = String(
+        response.headers['content-type'] ?? 'application/octet-stream',
+      );
+      res.setHeader('content-type', contentType);
+      if (response.headers['content-length']) {
+        res.setHeader(
+          'content-length',
+          String(response.headers['content-length']),
+        );
+      }
+      if (response.headers['content-disposition']) {
+        res.setHeader(
+          'content-disposition',
+          String(response.headers['content-disposition']),
+        );
+      }
+
+      if (contentType.includes('application/json') || response.status >= 400) {
+        const text = Buffer.from(response.data as ArrayBuffer).toString('utf8');
+        try {
+          res.json(JSON.parse(text));
+        } catch {
+          res.end(text);
+        }
+      } else {
+        res.end(Buffer.from(response.data as ArrayBuffer));
+      }
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  private async discoverServiceUrl(
+    serviceName: string,
+  ): Promise<string | null> {
+    const cached = await this.cacheManager.get<string>(
+      `service:${serviceName}`,
+    );
+
+    if (cached) {
+      return cached;
+    }
+
+    // Discover from Consul
+    const url = await this.consulService.discoverService(serviceName);
+
+    if (url) {
+      await this.cacheManager.set(`service:${serviceName}`, url, 30000); // Cache for 30 seconds
+    }
+
+    return url;
+  }
+
+  private buildTargetUrl(baseUrl: string, req: Request): string {
+    const path = req.url.split('?')[0].replace(/^\/v1/, ''); // Remove query string and /v1/ prefix
+
+    return `${baseUrl}${path}`;
+  }
+
+  private buildResponseLinks(url: string): Record<string, string> {
+    const base: Record<string, string> = { self: url };
+
+    if (url.includes('/auth/sessions')) {
+      base['users'] = '/v1/auth/users/me';
+      base['suggestions'] = '/v1/suggestion';
+      base['favorites'] = '/v1/favorite';
+      base['history'] = '/v1/history';
+      base['analytics'] = '/v1/analytics/events';
+    }
+
+    if (url.includes('/auth/users') && !url.includes('/me')) {
+      base['sessions'] = '/v1/auth/sessions';
+      base['users'] = '/v1/auth/users/me';
+      base['suggestions'] = '/v1/suggestion';
+      base['favorites'] = '/v1/favorite';
+      base['history'] = '/v1/history';
+    }
+
+    if (url.includes('/auth/users/me')) {
+      base['suggestions'] = '/v1/suggestion';
+      base['favorites'] = '/v1/favorite';
+      base['history'] = '/v1/history';
+    }
+
+    if (url.includes('/suggestion')) {
+      base['favorites'] = '/v1/favorite';
+      base['history'] = '/v1/history';
+    }
+
+    if (url.includes('/favorite')) {
+      base['suggestions'] = '/v1/suggestion';
+      base['history'] = '/v1/history';
+    }
+
+    if (url.includes('/history')) {
+      base['suggestions'] = '/v1/suggestion';
+      base['favorites'] = '/v1/favorite';
+    }
+
+    if (url.includes('/analytics')) {
+      base['suggestions'] = '/v1/suggestion';
+      base['favorites'] = '/v1/favorite';
+      base['history'] = '/v1/history';
+    }
+
+    return base;
+  }
+
+  private filterHeaders(headers: any): any {
+    const filtered = { ...headers };
+
+    delete filtered.host;
+    delete filtered['content-length'];
+
+    return filtered;
+  }
+
+  private handleError(error: any, res: Response) {
+    this.logger.error('Proxy error:', error.message || error);
+
+    // Check if response already sent
+    if (res.headersSent) {
+      return;
+    }
+
+    if (error.response && error.response.status) {
+      // Axios error with correct status
+      res.status(error.response.status).json(error.response.data);
+    } else if (error instanceof HttpException) {
+      // NestJS HttpException
+      res.status(error.getStatus()).json({
+        statusCode: error.getStatus(),
+        message: error.message,
+      });
+    } else {
+      // Fallback for all other errors
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: error.message || 'Internal server error',
+      });
+    }
+  }
+}

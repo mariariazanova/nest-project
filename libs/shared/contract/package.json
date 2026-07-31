@@ -1,0 +1,13 @@
+{
+  "name": "@suggestify/shared/contract",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@ts-rest/core": "3.53.0-rc.1",
+    "zod": "^4.4.3"
+  }
+}
