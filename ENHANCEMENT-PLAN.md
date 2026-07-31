@@ -321,6 +321,7 @@ The `@Index()` decorators added in Phase 1.1 cover exact matches and prefix quer
 - Create RoleGuard decorator for route protection
 - Add `RoleGuard` to `GET /analytics/*` routes in `analytics-service` (Phase 2.3) — no new admin-service needed; the analytics REST API is already built there
 - Protect analytics routes with admin role check
+- Fix `GET /analytics/users/top` duplicate rows: currently groups by `(userId, username)`, producing two rows for the same user when some events lack `username` (non-auth services don't include it). Change the query to group by `userId` only and use `MAX(username)` to pick the non-null value
 
 **Frontend Changes:**
 
